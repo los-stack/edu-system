@@ -21,6 +21,9 @@ app.use('/api/courses', courseRoutes);
 const assignmentRoutes = require('./routes/assignments');
 app.use('/api/assignments', assignmentRoutes);
 
+const adminRoutes = require('./routes/admin');
+app.use('/api/admin', adminRoutes);
+
 app.get('/', (req, res) => {
     res.send('Привіт! Сервер інформаційної системи успішно працює!');
 });

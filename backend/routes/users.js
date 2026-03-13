@@ -42,4 +42,25 @@ router.get('/my-grades', authMiddleware, async (req, res) => {
     }
 });
 
+router.get('/my-deadlines', authMiddleware, async (req, res) => {
+    try {
+        const studentId = req.user.id;
+
+        const query = `
+            SELECT a.id, a.title, a.due_date, c.title AS course_title
+            FROM assignments a
+            JOIN enrollments e ON a.course_id = e.course_id
+            JOIN courses c ON a.course_id = c.id
+            WHERE e.student_id = $1 AND a.due_date >= CURRENT_DATE
+            ORDER BY a.due_date ASC
+        `;
+
+        const deadlines = await db.query(query, [studentId]);
+        res.json(deadlines.rows);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ error: 'Помилка при отриманні дедлайнів' });
+    }
+});
+
 module.exports = router;

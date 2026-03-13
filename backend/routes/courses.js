@@ -20,6 +20,22 @@ router.get('/', authMiddleware, async (req, res) => {
     }
 });
 
+router.get('/:id', authMiddleware, async (req, res) => {
+    try {
+        const courseId = req.params.id;
+        const course = await db.query('SELECT * FROM courses WHERE id = $1', [courseId]);
+        
+        if (course.rows.length === 0) {
+            return res.status(404).json({ error: 'Курс не знайдено' });
+        }
+        
+        res.json(course.rows[0]);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ error: 'Помилка при отриманні курсу' });
+    }
+});
+
 router.post('/', authMiddleware, roleMiddleware, async (req, res) => {
     try {
         const { title, description } = req.body;
@@ -108,6 +124,25 @@ router.get('/:id/assignments', authMiddleware, async (req, res) => {
     } catch (error) {
         console.error(error.message);
         res.status(500).json({ error: 'Помилка при отриманні завдань.' });
+    }
+});
+
+router.get('/:id/students', authMiddleware, roleMiddleware, async (req, res) => {
+    try {
+        const courseId = req.params.id;
+        
+        const query = `
+            SELECT u.id, u.name, u.email 
+            FROM users u
+            JOIN enrollments e ON u.id = e.student_id
+            WHERE e.course_id = $1
+        `;
+        const students = await db.query(query, [courseId]);
+        
+        res.json(students.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Помилка при отриманні списку студентів' });
     }
 });
 

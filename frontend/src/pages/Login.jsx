@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
 function Login() {
@@ -18,7 +18,7 @@ function Login() {
                 password: password
             });
 
-            const { token, user } = response.data;
+            const { token } = response.data;
 
             localStorage.setItem('token', token);
             
@@ -57,7 +57,11 @@ function Login() {
                 <button type="submit">Увійти</button>
             </form>
 
-            {message && <p style={{ color: 'blue', marginTop: '15px' }}>{message}</p>}
+            {message && <p style={{ color: 'red', marginTop: '15px' }}>{message}</p>}
+            
+            <p style={{ marginTop: '20px', fontSize: '14px' }}>
+                Ще не зареєстровані? <Link to="/register">Створити акаунт</Link>
+            </p>
         </div>
     );
 }
