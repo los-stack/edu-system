@@ -3,6 +3,19 @@ const router = express.Router();
 const db = require('../config/db');
 const authMiddleware = require('../middlewares/authMiddleware'); 
 const roleMiddleware = require('../middlewares/roleMiddleware'); 
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/'); 
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ storage });
 
 router.get('/', authMiddleware, async (req, res) => {
     try {
@@ -86,10 +99,12 @@ router.post('/:id/enroll', authMiddleware, async (req, res) => {
     }
 });
 
-router.post('/:id/assignments', authMiddleware, roleMiddleware, async (req, res) => {
+router.post('/:id/assignments', authMiddleware, roleMiddleware, upload.single('file'), async (req, res) => {
     try {
         const courseId = req.params.id;
         const { title, description, due_date } = req.body;
+        
+        const fileUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
         const courseCheck = await db.query('SELECT * FROM courses WHERE id = $1', [courseId]);
         if (courseCheck.rows.length === 0) {
@@ -97,8 +112,8 @@ router.post('/:id/assignments', authMiddleware, roleMiddleware, async (req, res)
         }
 
         const newAssignment = await db.query(
-            'INSERT INTO assignments (course_id, title, description, due_date) VALUES ($1, $2, $3, $4) RETURNING *',
-            [courseId, title, description, due_date]
+            'INSERT INTO assignments (course_id, title, description, due_date, file_url) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [courseId, title, description, due_date, fileUrl]
         );
 
         res.status(201).json({
@@ -143,6 +158,53 @@ router.get('/:id/students', authMiddleware, roleMiddleware, async (req, res) => 
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Помилка при отриманні списку студентів' });
+    }
+});
+
+router.get('/:id/submissions', authMiddleware, async (req, res) => {
+    try {
+        const courseId = req.params.id;
+        
+        let query = `
+            SELECT s.assignment_id, s.student_id, s.file_url, u.name AS student_name 
+            FROM submissions s
+            JOIN assignments a ON s.assignment_id = a.id
+            JOIN users u ON s.student_id = u.id
+            WHERE a.course_id = $1
+        `;
+        const params = [courseId];
+
+        if (req.user.role === 'student') {
+            query += ` AND s.student_id = $2`;
+            params.push(req.user.id);
+        }
+
+        const result = await db.query(query, params);
+        res.json(result.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Помилка отримання робіт' });
+    }
+});
+
+router.get('/:id/comments', authMiddleware, async (req, res) => {
+    try {
+        const courseId = req.params.id;
+        
+        const query = `
+            SELECT c.id, c.assignment_id, c.user_id, c.text, c.created_at, u.name AS user_name, u.role AS user_role
+            FROM comments c
+            JOIN assignments a ON c.assignment_id = a.id
+            JOIN users u ON c.user_id = u.id
+            WHERE a.course_id = $1
+            ORDER BY c.created_at ASC
+        `;
+        
+        const result = await db.query(query, [courseId]);
+        res.json(result.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Помилка отримання коментарів' });
     }
 });
 
