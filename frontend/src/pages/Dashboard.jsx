@@ -10,6 +10,7 @@ function Dashboard() {
     const [error, setError] = useState('');
     const [deadlines, setDeadlines] = useState([]);
 
+    const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
     const [newCourseTitle, setNewCourseTitle] = useState('');
     const [newCourseDesc, setNewCourseDesc] = useState('');
 
@@ -62,13 +63,14 @@ function Dashboard() {
                 { title: newCourseTitle, description: newCourseDesc },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            alert('Курс успішно створено!');
+            
             const newCourse = { ...response.data.course, teacher_name: user.name };
             setCourses([newCourse, ...courses]); 
             setNewCourseTitle('');
             setNewCourseDesc('');
+            setIsCourseModalOpen(false); 
         } catch (err) {
-            console.error('Помилка:', err);
+            console.error(err);
             alert('Помилка при створенні курсу');
         }
     };
@@ -98,7 +100,7 @@ function Dashboard() {
     );
 
     return (
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto pb-12 relative">
             
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                 <div>
@@ -138,7 +140,7 @@ function Dashboard() {
                 <div className="mb-10 space-y-4">
                     {urgentDeadlines.length > 0 && (
                         <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-                            <svg className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <svg className="w-6 h-6 text-red-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                             <div>
                                 <h3 className="text-sm font-bold text-red-800">Увага! Термінові завдання</h3>
                                 <p className="text-sm text-red-700 mt-1">У вас є завдання ({urgentDeadlines.length} шт.), які потрібно здати найближчим часом.</p>
@@ -169,25 +171,18 @@ function Dashboard() {
                 </div>
             )}
 
-            {user.role === 'teacher' && (
-                <div className="mb-10 bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Створити новий курс</h3>
-                    <form onSubmit={handleCreateCourse} className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1 space-y-4">
-                            <input type="text" placeholder="Назва курсу" value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} required 
-                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" />
-                            <textarea placeholder="Короткий опис курсу..." value={newCourseDesc} onChange={(e) => setNewCourseDesc(e.target.value)} rows="2"
-                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm resize-none" />
-                        </div>
-                        <button type="submit" className="sm:self-stretch px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap">
-                            Створити
-                        </button>
-                    </form>
-                </div>
-            )}
-
-            <div className="mb-6 flex justify-between items-end">
+            <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-gray-200 pb-4">
                 <h2 className="text-xl font-bold text-gray-900">Каталог курсів</h2>
+                
+                {user.role === 'teacher' && (
+                    <button 
+                        onClick={() => setIsCourseModalOpen(true)}
+                        className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                        Створити курс
+                    </button>
+                )}
             </div>
             
             {courses.length === 0 ? (
@@ -198,23 +193,19 @@ function Dashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {courses.map((course) => (
                         <div key={course.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col h-full hover:shadow-md transition-shadow group">
-                            
-                            <div className="flex-grow mb-6">
+                            <div className="grow mb-6">
                                 <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{course.title}</h3>
                                 <p className="text-sm text-gray-600 line-clamp-3">{course.description}</p>
                             </div>
-                            
                             <div className="pt-4 border-t border-gray-100">
                                 <p className="text-xs text-gray-500 mb-4 flex items-center gap-1.5">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                                     Викладач: <span className="font-medium text-gray-700">{course.teacher_name}</span>
                                 </p>
-                                
                                 <div className="flex flex-wrap gap-2">
                                     <Link to={`/course/${course.id}`} className="flex-1 text-center px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
                                         Відкрити
                                     </Link>
-                                    
                                     {user.role === 'student' && (
                                         <button onClick={() => handleEnroll(course.id)} className="flex-1 text-center px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
                                             Записатися
@@ -222,9 +213,43 @@ function Dashboard() {
                                     )}
                                 </div>
                             </div>
-                            
                         </div>
                     ))}
+                </div>
+            )}
+
+            {isCourseModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <h3 className="text-lg font-bold text-gray-900">Створити новий курс</h3>
+                            <button onClick={() => setIsCourseModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        
+                        <form onSubmit={handleCreateCourse} className="p-6 space-y-5">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Назва курсу</label>
+                                <input type="text" placeholder="Наприклад: Основи програмування" value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} required 
+                                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Опис курсу</label>
+                                <textarea placeholder="Про що цей курс..." value={newCourseDesc} onChange={(e) => setNewCourseDesc(e.target.value)} rows="4" required
+                                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm resize-none" />
+                            </div>
+                            
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button type="button" onClick={() => setIsCourseModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    Скасувати
+                                </button>
+                                <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                                    Створити курс
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </div>

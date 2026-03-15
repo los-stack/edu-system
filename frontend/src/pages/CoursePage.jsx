@@ -13,10 +13,13 @@ function CoursePage() {
     const [comments, setComments] = useState([]);
     const [error, setError] = useState('');
 
+    const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newDesc, setNewDesc] = useState('');
     const [newDueDate, setNewDueDate] = useState('');
     const [newFile, setNewFile] = useState(null); 
+
+    const [openComments, setOpenComments] = useState([]);
 
     useEffect(() => {
         const fetchCourseData = async () => {
@@ -47,6 +50,14 @@ function CoursePage() {
         fetchCourseData();
     }, [id, navigate]);
 
+    const toggleComments = (assignmentId) => {
+        setOpenComments(prev => 
+            prev.includes(assignmentId) 
+                ? prev.filter(id => id !== assignmentId) 
+                : [...prev, assignmentId] 
+        );
+    };
+
     const handleCreateAssignment = async (e) => {
         e.preventDefault();
         try {
@@ -61,12 +72,11 @@ function CoursePage() {
                 headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } 
             });
 
-            alert('Завдання успішно додано!');
             setAssignments([...assignments, response.data.assignment]);
             setNewTitle(''); setNewDesc(''); setNewDueDate(''); setNewFile(null);
-            document.getElementById('fileInput').value = ''; 
+            setIsAssignmentModalOpen(false);
         } catch (err) {
-            console.error('Помилка:', err);
+            console.error(err);
             alert('Помилка при створенні завдання');
         }
     };
@@ -94,7 +104,7 @@ function CoursePage() {
             });
             fileInput.value = ''; 
         } catch (err) {
-            console.error('Помилка:', err);
+            console.error(err);
             alert('Помилка при відправці роботи');
         }
     };
@@ -121,6 +131,7 @@ function CoursePage() {
     const handleCommentSubmit = async (e, assignmentId) => {
         e.preventDefault();
         const textVal = e.target.elements.commentInput.value;
+        if (!textVal.trim()) return;
 
         try {
             const token = localStorage.getItem('token');
@@ -131,7 +142,7 @@ function CoursePage() {
             setComments([...comments, res.data.comment]);
             e.target.reset(); 
         } catch (err) {
-            console.error('Помилка:', err);
+            console.error(err);
             alert('Помилка при відправці коментаря');
         }
     };
@@ -144,57 +155,36 @@ function CoursePage() {
     );
 
     return (
-        <div className="max-w-4xl mx-auto pb-12">
+        <div className="max-w-4xl mx-auto pb-12 relative">
             
-            {/* Навігація "Назад" */}
             <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 mb-6 transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                 Назад до панелі
             </Link>
             
-            {/* Шапка курсу */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
                 <h1 className="text-3xl font-extrabold text-gray-900 mb-3">{course.title}</h1>
                 <p className="text-gray-600 text-lg leading-relaxed">{course.description}</p>
             </div>
 
-            {/* Блок створення завдання для викладача */}
-            {user.role === 'teacher' && (
-                <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 sm:p-8 mb-10">
-                    <h3 className="text-lg font-bold text-gray-900 mb-5">Додати нове завдання</h3>
-                    <form onSubmit={handleCreateAssignment} className="space-y-4">
-                        <input type="text" placeholder="Назва завдання" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required 
-                            className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" />
-                        
-                        <textarea placeholder="Детальний опис (умови, вимоги...)" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} required rows="3"
-                            className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm resize-none" />
-                        
-                        <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
-                            <div className="w-full sm:w-auto">
-                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Дедлайн</label>
-                                <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} required 
-                                    className="w-full sm:w-auto px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-700" />
-                            </div>
-                            <div className="w-full sm:w-auto">
-                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Прикріпити матеріал</label>
-                                {/* Магія Tailwind для інпута файлу (file: модифікатори) */}
-                                <input type="file" id="fileInput" onChange={(e) => setNewFile(e.target.files[0])} 
-                                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
-                            </div>
-                        </div>
-                        <button type="submit" className="mt-2 inline-flex justify-center py-2.5 px-6 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                            Опублікувати завдання
-                        </button>
-                    </form>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 border-b border-gray-200 pb-4">
+                <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-bold text-gray-900">Завдання курсу</h2>
+                    <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{assignments.length}</span>
                 </div>
-            )}
-
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Завдання курсу</h2>
-                <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{assignments.length} завдань</span>
+                
+                {user.role === 'teacher' && (
+                    <button 
+                        onClick={() => setIsAssignmentModalOpen(true)}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                        Додати завдання
+                    </button>
+                )}
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-8">
                 {assignments.length === 0 ? (
                     <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-300">
                         <p className="text-gray-500">Завдань ще немає.</p>
@@ -204,11 +194,10 @@ function CoursePage() {
                     const assignmentSubmissions = submissions.filter(s => s.assignment_id === assignment.id);
                     const mySub = assignmentSubmissions.find(s => s.student_id === user.id);
                     const assignmentComments = comments.filter(c => c.assignment_id === assignment.id);
+                    const isCommentsOpen = openComments.includes(assignment.id);
 
                     return (
                         <div key={assignment.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                            
-                            {/* Тіло завдання */}
                             <div className="p-6 sm:p-8">
                                 <h3 className="text-xl font-bold text-gray-900 mb-3">{assignment.title}</h3>
                                 <p className="text-gray-600 mb-6 whitespace-pre-wrap leading-relaxed">{assignment.description}</p>
@@ -229,11 +218,9 @@ function CoursePage() {
                                 </div>
                             </div>
 
-                            {/* Робоча зона (Студент) */}
                             {user.role === 'student' && (
                                 <div className="bg-gray-50 px-6 py-5 border-t border-gray-100">
                                     <h4 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">Моя відповідь</h4>
-                                    
                                     {mySub ? (
                                         <div className="flex items-center gap-3 mb-4">
                                             <span className="flex items-center gap-1.5 text-sm font-medium text-green-700 bg-green-50 px-3 py-1 rounded-full border border-green-200">
@@ -250,10 +237,9 @@ function CoursePage() {
                                             Робота ще не здана
                                         </p>
                                     )}
-                                    
                                     <form onSubmit={(e) => handleStudentSubmit(e, assignment.id)} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                                         <input type="file" id={`studentFile-${assignment.id}`} required 
-                                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full border-0 file:text-sm file:font-semibold file:bg-white file:border file:border-gray-300 file:text-gray-700 hover:file:bg-gray-50 cursor-pointer" />
+                                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:border file:border-gray-300 file:text-gray-700 hover:file:bg-gray-50 cursor-pointer" />
                                         <button type="submit" className="whitespace-nowrap px-5 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
                                             {mySub ? 'Перездати' : 'Відправити'}
                                         </button>
@@ -261,98 +247,185 @@ function CoursePage() {
                                 </div>
                             )}
 
-                            {/* Робоча зона (Викладач) */}
                             {user.role === 'teacher' && (
-                                <div className="bg-gray-50 px-6 py-5 border-t border-gray-100">
-                                    <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Здані роботи студентів ({assignmentSubmissions.length})</h4>
-                                    
+                                <div className="bg-white px-6 py-6 border-t border-gray-100">
+                                    <div className="flex items-center justify-between mb-5">
+                                        <h4 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                            Роботи на перевірку
+                                        </h4>
+                                        <span className="bg-blue-50 text-blue-700 py-1 px-3 rounded-full text-xs font-bold border border-blue-100">
+                                            {assignmentSubmissions.length} здано
+                                        </span>
+                                    </div>
+
                                     {assignmentSubmissions.length === 0 ? (
-                                        <p className="text-sm text-gray-500">Поки ніхто не здав роботу.</p>
+                                        <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                            <p className="text-sm text-gray-500">Поки ніхто не здав роботу. Тут з'явиться список студентів.</p>
+                                        </div>
                                     ) : (
-                                        <div className="space-y-3">
-                                            {assignmentSubmissions.map(sub => (
-                                                <div key={sub.student_id} className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between shadow-sm">
-                                                    
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
-                                                            {sub.student_name.charAt(0)}
+                                        <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                                            <ul className="divide-y divide-gray-100">
+                                                {assignmentSubmissions.map(sub => (
+                                                    <li key={sub.student_id} className="p-4 sm:p-5 flex flex-col xl:flex-row gap-4 xl:items-center justify-between hover:bg-gray-50/50 transition-colors">
+                                                        
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-10 h-10 shrink-0 rounded-full bg-linear-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 font-bold text-sm border border-blue-200">
+                                                                {sub.student_name.charAt(0)}
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-bold text-gray-900">{sub.student_name}</p>
+                                                                <a href={`http://localhost:5000${sub.file_url}`} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">
+                                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                                                    Завантажити рішення
+                                                                </a>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <strong className="block text-sm text-gray-900">{sub.student_name}</strong>
-                                                            <a href={`http://localhost:5000${sub.file_url}`} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
-                                                                Завантажити файл
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <form onSubmit={(e) => handleGradeSubmit(e, assignment.id, sub.student_id)} className="flex w-full md:w-auto gap-2 items-center">
-                                                        <input type="number" name="scoreInput" placeholder="Бал (0-100)" min="0" max="100" required 
-                                                            className="w-24 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                                                        <input type="text" name="feedbackInput" placeholder="Коментар..." 
-                                                            className="flex-1 md:w-40 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                                                        <button type="submit" className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors">
-                                                            Оцінити
-                                                        </button>
-                                                    </form>
-                                                    
-                                                </div>
-                                            ))}
+
+                                                        <form onSubmit={(e) => handleGradeSubmit(e, assignment.id, sub.student_id)} className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
+                                                            <div className="relative">
+                                                                <input type="number" name="scoreInput" placeholder="Бал" min="0" max="100" required 
+                                                                    className="w-20 pl-3 pr-2 py-2 text-sm text-center font-semibold bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" />
+                                                            </div>
+                                                            <input type="text" name="feedbackInput" placeholder="Коментар (необов'язково)..." 
+                                                                className="flex-1 xl:w-48 px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" />
+                                                            <button type="submit" className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm shrink-0">
+                                                                Оцінити
+                                                            </button>
+                                                        </form>
+                                                        
+                                                    </li>
+                                                ))}
+                                            </ul>
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            <div className="px-6 py-5 border-t border-gray-100 bg-white">
-                                <h4 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
-                                    Обговорення ({assignmentComments.length})
-                                </h4>
-                                
-                                <div className="space-y-4 mb-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                                    {assignmentComments.length === 0 ? (
-                                        <p className="text-sm text-gray-500 italic">Немає запитань. Задайте першим!</p>
-                                    ) : (
-                                        assignmentComments.map(comment => {
-                                            const isMe = comment.user_id === user.id;
+                            <button 
+                                onClick={() => toggleComments(assignment.id)}
+                                className="w-full px-6 py-4 flex items-center justify-between bg-gray-50/50 border-t border-gray-100 hover:bg-gray-100 transition-colors focus:outline-none"
+                            >
+                                <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
+                                    Коментарі класу ({assignmentComments.length})
+                                </span>
+                                <svg className={`w-5 h-5 text-gray-400 transform transition-transform duration-200 ${isCommentsOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
 
-                                            return (
-                                                <div key={comment.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                                    <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${isMe ? 'bg-blue-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-900 rounded-bl-none'}`}>
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <span className="text-xs font-bold opacity-90">
-                                                                {isMe ? 'Ви' : comment.user_name}
-                                                            </span>
-                                                            
-                                                            {comment.user_role === 'teacher' && (
-                                                                <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${isMe ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'}`}>
-                                                                    Викладач
-                                                                </span>
-                                                            )}
+                            {isCommentsOpen && (
+                                <div className="px-6 py-6 border-t border-gray-100 bg-gray-50/30">
+                                    <div className="space-y-0 mb-6 border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm">
+                                        {assignmentComments.length === 0 ? (
+                                            <div className="p-6 text-center text-sm text-gray-500">
+                                                Поки немає коментарів. Задайте питання першим!
+                                            </div>
+                                        ) : (
+                                            assignmentComments.map((comment, index) => {
+                                                const isMe = comment.user_id === user.id;
+                                                const isLast = index === assignmentComments.length - 1;
+                                                
+                                                return (
+                                                    <div key={comment.id} className={`flex gap-4 p-5 hover:bg-gray-50/50 transition-colors ${!isLast ? 'border-b border-gray-100' : ''}`}>
+                                                        <div className="shrink-0 mt-1">
+                                                            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border ${comment.user_role === 'teacher' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                                                                {comment.user_name.charAt(0)}
+                                                            </div>
                                                         </div>
-                                                        <p className="text-sm">{comment.text}</p>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center flex-wrap gap-2 mb-1">
+                                                                <span className="text-sm font-bold text-gray-900">{isMe ? 'Ви' : comment.user_name}</span>
+                                                                {comment.user_role === 'teacher' && (
+                                                                    <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100">Викладач</span>
+                                                                )}
+                                                                <span className="text-xs text-gray-400 ml-auto">
+                                                                    {new Date(comment.created_at).toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' })}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap wrap-break-word">{comment.text}</p>
+                                                        </div>
                                                     </div>
-                                                    <span className="text-xs text-gray-400 mt-1 px-1">
-                                                        {new Date(comment.created_at).toLocaleTimeString('uk-UA', {hour: '2-digit', minute:'2-digit'})}
-                                                    </span>
-                                                </div>
-                                            );
-                                        })
-                                    )}
-                                </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
 
-                                <form onSubmit={(e) => handleCommentSubmit(e, assignment.id)} className="flex gap-2">
-                                    <input type="text" name="commentInput" placeholder="Написати повідомлення..." required 
-                                        className="flex-1 px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" />
-                                    <button type="submit" className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors flex-shrink-0">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                                    </button>
-                                </form>
-                            </div>
+                                    <form onSubmit={(e) => handleCommentSubmit(e, assignment.id)} className="flex gap-4 items-start">
+                                        <div className="hidden sm:flex w-9 h-9 mt-1 shrink-0 rounded-full bg-blue-50 items-center justify-center text-sm font-bold text-blue-700 border border-blue-100">
+                                            {user.name.charAt(0)}
+                                        </div>
+                                        <div className="flex-1">
+                                            <textarea 
+                                                name="commentInput" 
+                                                placeholder="Додати коментар для всього класу..." 
+                                                required 
+                                                rows="2"
+                                                className="w-full px-4 py-3 text-sm text-gray-900 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors resize-none shadow-sm" 
+                                            />
+                                            <div className="flex justify-end mt-2">
+                                                <button type="submit" className="px-5 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm inline-flex items-center gap-2">
+                                                    <span>Надіслати</span>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            )}
 
                         </div>
                     );
                 })}
             </div>
+
+            {isAssignmentModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <h3 className="text-lg font-bold text-gray-900">Додати нове завдання</h3>
+                            <button onClick={() => setIsAssignmentModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        
+                        <form onSubmit={handleCreateAssignment} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Назва завдання</label>
+                                <input type="text" placeholder="Введіть назву..." value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required 
+                                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 sm:text-sm" />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Детальний опис</label>
+                                <textarea placeholder="Умови, вимоги..." value={newDesc} onChange={(e) => setNewDesc(e.target.value)} required rows="3"
+                                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 sm:text-sm resize-none" />
+                            </div>
+                            
+                            <div className="flex flex-col sm:flex-row gap-5">
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Дедлайн</label>
+                                    <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} required 
+                                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm" />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Матеріали (опціонально)</label>
+                                    <input type="file" id="fileInput" onChange={(e) => setNewFile(e.target.files[0])} 
+                                        className="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer" />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4">
+                                <button type="button" onClick={() => setIsAssignmentModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    Скасувати
+                                </button>
+                                <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
+                                    Опублікувати
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

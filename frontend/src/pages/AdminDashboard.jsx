@@ -104,7 +104,7 @@ function AdminDashboard() {
                                         
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 font-bold text-sm border border-blue-200">
+                                                <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 font-bold text-sm border border-blue-200">
                                                     {user.name.charAt(0)}
                                                 </div>
                                                 <div className="text-sm font-bold text-gray-900">{user.name}</div>
