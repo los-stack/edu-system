@@ -9,6 +9,7 @@ function Dashboard() {
     const [user, setUser] = useState(null); 
     const [error, setError] = useState('');
     const [deadlines, setDeadlines] = useState([]);
+    const [enrolledCourseIds, setEnrolledCourseIds] = useState([]);
 
     const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
     const [newCourseTitle, setNewCourseTitle] = useState('');
@@ -36,6 +37,11 @@ function Dashboard() {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setDeadlines(deadlinesRes.data);
+
+                    const enrollmentsRes = await axios.get('http://localhost:5000/api/users/my-enrollments', {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    setEnrolledCourseIds(enrollmentsRes.data);
                 }
             } catch (err) {
                 console.error(err);
@@ -68,9 +74,9 @@ function Dashboard() {
             setCourses([newCourse, ...courses]); 
             setNewCourseTitle('');
             setNewCourseDesc('');
-            setIsCourseModalOpen(false); 
+            setIsCourseModalOpen(false);
         } catch (err) {
-            console.error(err);
+            console.error('Помилка:', err);
             alert('Помилка при створенні курсу');
         }
     };
@@ -81,6 +87,8 @@ function Dashboard() {
             const response = await axios.post(`http://localhost:5000/api/courses/${courseId}/enroll`, 
                 {}, { headers: { Authorization: `Bearer ${token}` } }
             );
+            
+            setEnrolledCourseIds(prev => [...prev, courseId]);
             alert(response.data.message); 
         } catch (err) {
             if (err.response && err.response.data) alert(err.response.data.error);
@@ -191,30 +199,44 @@ function Dashboard() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {courses.map((course) => (
-                        <div key={course.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col h-full hover:shadow-md transition-shadow group">
-                            <div className="grow mb-6">
-                                <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{course.title}</h3>
-                                <p className="text-sm text-gray-600 line-clamp-3">{course.description}</p>
-                            </div>
-                            <div className="pt-4 border-t border-gray-100">
-                                <p className="text-xs text-gray-500 mb-4 flex items-center gap-1.5">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                                    Викладач: <span className="font-medium text-gray-700">{course.teacher_name}</span>
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                    <Link to={`/course/${course.id}`} className="flex-1 text-center px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
-                                        Відкрити
-                                    </Link>
-                                    {user.role === 'student' && (
-                                        <button onClick={() => handleEnroll(course.id)} className="flex-1 text-center px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
-                                            Записатися
-                                        </button>
-                                    )}
+                    {courses.map((course) => {
+                        // Перевіряємо, чи студент записаний на поточний курс
+                        const isEnrolled = enrolledCourseIds.includes(course.id);
+
+                        return (
+                            <div key={course.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col h-full hover:shadow-md transition-shadow group">
+                                <div className="grow mb-6">
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{course.title}</h3>
+                                    <p className="text-sm text-gray-600 line-clamp-3">{course.description}</p>
+                                </div>
+                                <div className="pt-4 border-t border-gray-100">
+                                    <p className="text-xs text-gray-500 mb-4 flex items-center gap-1.5">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                        Викладач: <span className="font-medium text-gray-700">{course.teacher_name}</span>
+                                    </p>
+                                    
+                                    <div className="flex flex-wrap gap-2">
+                                        <Link to={`/course/${course.id}`} className="flex-1 text-center px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+                                            Відкрити
+                                        </Link>
+                                        
+                                        {user.role === 'student' && (
+                                            isEnrolled ? (
+                                                <span className="flex-1 flex justify-center items-center gap-1 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-bold border border-green-200 cursor-default">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                                    Ви записані
+                                                </span>
+                                            ) : (
+                                                <button onClick={() => handleEnroll(course.id)} className="flex-1 text-center px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
+                                                    Записатися
+                                                </button>
+                                            )
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 

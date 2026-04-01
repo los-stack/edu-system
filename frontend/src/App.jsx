@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import CoursePage from './pages/CoursePage';
 import MyGrades from './pages/MyGrades';
 import AdminDashboard from './pages/AdminDashboard';
+import TakeQuiz from './pages/TakeQuiz';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
             <Route path="/course/:id" element={<CoursePage />} />
             <Route path="/my-grades" element={<MyGrades />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/quiz/:quizId" element={<TakeQuiz />} />
           </Routes>
         </main>
         

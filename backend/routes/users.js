@@ -63,4 +63,17 @@ router.get('/my-deadlines', authMiddleware, async (req, res) => {
     }
 });
 
+router.get('/my-enrollments', authMiddleware, async (req, res) => {
+    try {
+        const result = await db.query('SELECT course_id FROM enrollments WHERE student_id = $1', [req.user.id]);
+        
+        const enrolledIds = result.rows.map(row => row.course_id);
+        
+        res.json(enrolledIds);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Помилка отримання підписок' });
+    }
+});
+
 module.exports = router;
