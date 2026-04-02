@@ -14,7 +14,7 @@ function MyGrades() {
                 const token = localStorage.getItem('token');
                 if (!token) return navigate('/');
 
-                const response = await axios.get('http://localhost:5000/api/users/my-grades', {
+                const response = await axios.get('/api/users/my-grades', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 
@@ -171,7 +171,7 @@ function MyGrades() {
                                     </div>
 
                                     <div className="shrink-0 flex items-center md:justify-end">
-                                        <div className={`flex flex-col items-center justify-center min-w-20 h-[80px] rounded-2xl border ${scoreBg} ${scoreBorder} shadow-sm`}>
+                                        <div className={`flex flex-col items-center justify-center min-w-20 h-20 rounded-2xl border ${scoreBg} ${scoreBorder} shadow-sm`}>
                                             <span className={`text-3xl font-extrabold ${scoreColor} leading-none`}>
                                                 {grade.score}
                                             </span>

@@ -30,30 +30,29 @@ function CoursePage() {
                 const token = localStorage.getItem('token');
                 if (!token) return navigate('/');
 
-                const profileRes = await axios.get('http://localhost:5000/api/users/profile', { headers: { Authorization: `Bearer ${token}` } });
+                const profileRes = await axios.get('/api/users/profile', { headers: { Authorization: `Bearer ${token}` } });
                 const currentUser = profileRes.data;
                 setUser(currentUser);
 
-                const courseRes = await axios.get(`http://localhost:5000/api/courses/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                const courseRes = await axios.get(`/api/courses/${id}`, { headers: { Authorization: `Bearer ${token}` } });
                 setCourse(courseRes.data);
 
-                const assignmentsRes = await axios.get(`http://localhost:5000/api/courses/${id}/assignments`, { headers: { Authorization: `Bearer ${token}` } });
+                const assignmentsRes = await axios.get(`/api/courses/${id}/assignments`, { headers: { Authorization: `Bearer ${token}` } });
                 setAssignments(assignmentsRes.data);
 
-                const subRes = await axios.get(`http://localhost:5000/api/courses/${id}/submissions`, { headers: { Authorization: `Bearer ${token}` } });
+                const subRes = await axios.get(`/api/courses/${id}/submissions`, { headers: { Authorization: `Bearer ${token}` } });
                 setSubmissions(subRes.data);
 
-                const commentsRes = await axios.get(`http://localhost:5000/api/courses/${id}/comments`, { headers: { Authorization: `Bearer ${token}` } });
+                const commentsRes = await axios.get(`/api/courses/${id}/comments`, { headers: { Authorization: `Bearer ${token}` } });
                 setComments(commentsRes.data);
 
-                const quizzesRes = await axios.get(`http://localhost:5000/api/quizzes/course/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                const quizzesRes = await axios.get(`/api/quizzes/course/${id}`, { headers: { Authorization: `Bearer ${token}` } });
                 setQuizzes(quizzesRes.data);
 
                 if (currentUser.role === 'student') {
-                    const myResultsRes = await axios.get(`http://localhost:5000/api/quizzes/my-results/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                    const myResultsRes = await axios.get(`/api/quizzes/my-results/${id}`, { headers: { Authorization: `Bearer ${token}` } });
                     setMyQuizResults(myResultsRes.data);
                 }
-
             } catch (err) {
                 console.error(err);
                 setError('Не вдалося завантажити дані курсу.');
@@ -63,13 +62,13 @@ function CoursePage() {
     }, [id, navigate]);
 
     const toggleComments = (assignmentId) => {
-        setOpenComments(prev => prev.includes(assignmentId) ? prev.filter(id => id !== assignmentId) : [...prev, assignmentId]);
+        setOpenComments(prev => prev.includes(assignmentId) ? prev.filter(aId => aId !== assignmentId) : [...prev, assignmentId]);
     };
 
     const handleCreateAssignment = async (formData) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post(`http://localhost:5000/api/courses/${id}/assignments`, formData, { 
+            const response = await axios.post(`/api/courses/${id}/assignments`, formData, { 
                 headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } 
             });
             setAssignments([...assignments, response.data.assignment]);
@@ -83,11 +82,10 @@ function CoursePage() {
     const handleCreateQuiz = async (quizData) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`http://localhost:5000/api/quizzes/course/${id}`, quizData, {
+            await axios.post(`/api/quizzes/course/${id}`, quizData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            
-            const quizzesRes = await axios.get(`http://localhost:5000/api/quizzes/course/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+            const quizzesRes = await axios.get(`/api/quizzes/course/${id}`, { headers: { Authorization: `Bearer ${token}` } });
             setQuizzes(quizzesRes.data);
             setIsQuizModalOpen(false);
         } catch (err) {
@@ -102,13 +100,12 @@ function CoursePage() {
             const token = localStorage.getItem('token');
             const fileInput = document.getElementById(`studentFile-${assignmentId}`);
             const file = fileInput.files[0];
-            
             if (!file) return alert('Оберіть файл для завантаження!');
 
             const formData = new FormData();
             formData.append('file', file);
 
-            const res = await axios.post(`http://localhost:5000/api/assignments/${assignmentId}/submit`, formData, {
+            const res = await axios.post(`/api/assignments/${assignmentId}/submit`, formData, {
                 headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
             });
 
@@ -131,11 +128,18 @@ function CoursePage() {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`http://localhost:5000/api/assignments/${assignmentId}/grade`, {
+            await axios.post(`/api/assignments/${assignmentId}/grade`, {
                 student_id: studentId, score: Number(scoreVal), feedback: feedbackVal
             }, { headers: { Authorization: `Bearer ${token}` } });
 
             alert('Оцінку успішно виставлено!');
+            
+            setSubmissions(prev => prev.map(sub => 
+                (sub.assignment_id === assignmentId && sub.student_id === studentId) 
+                    ? { ...sub, score: Number(scoreVal), feedback: feedbackVal } 
+                    : sub
+            ));
+            
             e.target.reset(); 
         } catch (err) {
             console.error('Помилка:', err);
@@ -146,12 +150,11 @@ function CoursePage() {
     const handleCommentSubmit = async (assignmentId, text) => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post(`http://localhost:5000/api/assignments/${assignmentId}/comments`, 
+            const res = await axios.post(`/api/assignments/${assignmentId}/comments`, 
                 { text: text }, { headers: { Authorization: `Bearer ${token}` } }
             );
             setComments([...comments, res.data.comment]);
-        } catch (err) {
-            console.error('Помилка:', err);
+        } catch (err) {console.error('Помилка:', err);
             alert('Помилка при відправці коментаря');
         }
     };
@@ -162,8 +165,7 @@ function CoursePage() {
     return (
         <div className="max-w-4xl mx-auto pb-12 relative">
             <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 mb-6 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                Назад до панелі
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Назад до панелі
             </Link>
             
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
@@ -175,16 +177,13 @@ function CoursePage() {
             <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
                 <div className="flex items-center gap-3">
                     <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-                        Тести курсу
+                        <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg> Тести курсу
                     </h2>
                     <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{quizzes.length}</span>
                 </div>
-                
                 {user.role === 'teacher' && (
                     <button onClick={() => setIsQuizModalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-                        Створити тест
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg> Створити тест
                     </button>
                 )}
             </div>
@@ -196,7 +195,6 @@ function CoursePage() {
                     </div>
                 ) : quizzes.map(quiz => {
                     const myResult = myQuizResults.find(r => r.quiz_id === quiz.id);
-
                     return (
                         <div key={quiz.id} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:shadow-md transition-shadow">
                             <div className="flex-1">
@@ -204,15 +202,13 @@ function CoursePage() {
                                 <p className="text-gray-600 text-sm mb-3">{quiz.description}</p>
                                 <div className="flex items-center gap-3">
                                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-100 text-blue-800 text-xs font-bold uppercase tracking-wider">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-                                        Тест
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg> Тест
                                     </span>
                                     <span className="text-xs font-medium text-gray-400">
                                         Створено: {new Date(quiz.created_at).toLocaleDateString('uk-UA')}
                                     </span>
                                 </div>
                             </div>
-                            
                             <div className="w-full sm:w-auto mt-2 sm:mt-0">
                                 {user.role === 'student' ? (
                                     myResult ? (
@@ -236,16 +232,15 @@ function CoursePage() {
                 })}
             </div>
 
+            {/* ================= СЕКЦІЯ ЗАВДАНЬ ================= */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 border-b border-gray-200 pb-4">
                 <div className="flex items-center gap-3">
                     <h2 className="text-2xl font-bold text-gray-900">Завдання курсу</h2>
                     <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{assignments.length}</span>
                 </div>
-                
                 {user.role === 'teacher' && (
                     <button onClick={() => setIsAssignmentModalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-                        Додати завдання
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg> Додати завдання
                     </button>
                 )}
             </div>
@@ -273,7 +268,7 @@ function CoursePage() {
                                         Дедлайн: {new Date(assignment.due_date).toLocaleDateString('uk-UA')}
                                     </div>
                                     {assignment.file_url && (
-                                        <a href={`http://localhost:5000${assignment.file_url}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-100 hover:text-blue-600 transition-colors">
+                                        <a href={`${import.meta.env.VITE_API_URL}${assignment.file_url}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-100 hover:text-blue-600 transition-colors">
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
                                             Матеріали викладача
                                         </a>
@@ -289,7 +284,7 @@ function CoursePage() {
                                             <span className="flex items-center gap-1.5 text-sm font-medium text-green-700 bg-green-50 px-3 py-1 rounded-full border border-green-200">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Здано
                                             </span>
-                                            <a href={`http://localhost:5000${mySub.file_url}`} target="_blank" rel="noreferrer" className="text-sm font-medium text-blue-600 hover:underline">Переглянути файл</a>
+                                            <a href={`${import.meta.env.VITE_API_URL}${mySub.file_url}`} target="_blank" rel="noreferrer" className="text-sm font-medium text-blue-600 hover:underline">Переглянути файл</a>
                                         </div>
                                     ) : (
                                         <p className="text-sm text-red-600 mb-4 font-medium flex items-center gap-1.5">
@@ -297,7 +292,7 @@ function CoursePage() {
                                         </p>
                                     )}
                                     <form onSubmit={(e) => handleStudentSubmit(e, assignment.id)} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                                        <input type="file" id={`studentFile-${assignment.id}`} required className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:border file:border-gray-300 file:text-gray-700 hover:file:bg-gray-50 cursor-pointer" />
+                                        <input type="file" id={`studentFile-${assignment.id}`} required className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:text-sm file:font-semibold file:bg-white file:border file:border-gray-300 file:text-gray-700 hover:file:bg-gray-50 cursor-pointer" />
                                         <button type="submit" className="whitespace-nowrap px-5 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
                                             {mySub ? 'Перездати' : 'Відправити'}
                                         </button>
@@ -330,16 +325,25 @@ function CoursePage() {
                                                             </div>
                                                             <div>
                                                                 <p className="text-sm font-bold text-gray-900">{sub.student_name}</p>
-                                                                <a href={`http://localhost:5000${sub.file_url}`} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">
+                                                                <a href={`${import.meta.env.VITE_API_URL}${sub.file_url}`} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">
                                                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Завантажити рішення
                                                                 </a>
                                                             </div>
                                                         </div>
-                                                        <form onSubmit={(e) => handleGradeSubmit(e, assignment.id, sub.student_id)} className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
-                                                            <input type="number" name="scoreInput" placeholder="Бал" min="0" max="100" required className="w-20 pl-3 pr-2 py-2 text-sm text-center font-semibold bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" />
-                                                            <input type="text" name="feedbackInput" placeholder="Коментар..." className="flex-1 xl:w-48 px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" />
-                                                            <button type="submit" className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm shrink-0">Оцінити</button>
-                                                        </form>
+                                                        
+                                                        {sub.score !== undefined && sub.score !== null ? (
+                                                            <div className="flex items-center gap-3 w-full xl:w-auto mt-2 xl:mt-0 bg-green-50 px-4 py-2.5 rounded-lg border border-green-100 shadow-sm">
+                                                                <svg className="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                                                <span className="text-sm font-bold text-green-800">Оцінено: {sub.score} / 100</span>
+                                                                {sub.feedback && <span className="text-sm text-green-600 italic hidden sm:inline border-l border-green-200 pl-3 ml-1">«{sub.feedback}»</span>}
+                                                            </div>
+                                                        ) : (
+                                                            <form onSubmit={(e) => handleGradeSubmit(e, assignment.id, sub.student_id)} className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
+                                                                <input type="number" name="scoreInput" placeholder="Бал" min="0" max="100" required className="w-20 pl-3 pr-2 py-2 text-sm text-center font-semibold bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" />
+                                                                <input type="text" name="feedbackInput" placeholder="Коментар..." className="flex-1 xl:w-48 px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" />
+                                                                <button type="submit" className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm shrink-0">Оцінити</button>
+                                                            </form>
+                                                        )}
                                                     </li>
                                                 ))}
                                             </ul>

@@ -10,7 +10,6 @@ function Dashboard() {
     const [error, setError] = useState('');
     const [deadlines, setDeadlines] = useState([]);
     const [enrolledCourseIds, setEnrolledCourseIds] = useState([]);
-
     const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
     const [newCourseTitle, setNewCourseTitle] = useState('');
     const [newCourseDesc, setNewCourseDesc] = useState('');
@@ -21,26 +20,18 @@ function Dashboard() {
                 const token = localStorage.getItem('token');
                 if (!token) return navigate('/');
 
-                const profileResponse = await axios.get('http://localhost:5000/api/users/profile', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const profileResponse = await axios.get('/api/users/profile', { headers: { Authorization: `Bearer ${token}` } });
                 const currentUser = profileResponse.data;
                 setUser(currentUser); 
 
-                const coursesResponse = await axios.get('http://localhost:5000/api/courses', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const coursesResponse = await axios.get('/api/courses', { headers: { Authorization: `Bearer ${token}` } });
                 setCourses(coursesResponse.data);
 
                 if (currentUser.role === 'student') {
-                    const deadlinesRes = await axios.get('http://localhost:5000/api/users/my-deadlines', {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
+                    const deadlinesRes = await axios.get('/api/users/my-deadlines', { headers: { Authorization: `Bearer ${token}` } });
                     setDeadlines(deadlinesRes.data);
 
-                    const enrollmentsRes = await axios.get('http://localhost:5000/api/users/my-enrollments', {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
+                    const enrollmentsRes = await axios.get('/api/users/my-enrollments', { headers: { Authorization: `Bearer ${token}` } });
                     setEnrolledCourseIds(enrollmentsRes.data);
                 }
             } catch (err) {
@@ -52,7 +43,6 @@ function Dashboard() {
                 }
             }
         };
-
         fetchData();
     }, [navigate]);
 
@@ -65,7 +55,7 @@ function Dashboard() {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post('http://localhost:5000/api/courses', 
+            const response = await axios.post('/api/courses', 
                 { title: newCourseTitle, description: newCourseDesc },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -84,10 +74,10 @@ function Dashboard() {
     const handleEnroll = async (courseId) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post(`http://localhost:5000/api/courses/${courseId}/enroll`, 
+            // Виправлено бектики
+            const response = await axios.post(`/api/courses/${courseId}/enroll`, 
                 {}, { headers: { Authorization: `Bearer ${token}` } }
             );
-            
             setEnrolledCourseIds(prev => [...prev, courseId]);
             alert(response.data.message); 
         } catch (err) {
@@ -101,44 +91,28 @@ function Dashboard() {
         return daysLeft >= 0 && daysLeft <= 3;
     });
 
-    if (!user) return (
-        <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-    );
+    if (!user) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
 
     return (
         <div className="max-w-6xl mx-auto pb-12 relative">
-            
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Головна панель</h1>
                     <div className="flex items-center gap-3 mt-2">
                         <p className="text-gray-500">Привіт, <span className="font-semibold text-gray-800">{user.name}</span>!</p>
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
-                            user.role === 'teacher' ? 'bg-green-100 text-green-800' : 
-                            'bg-blue-100 text-blue-800'
-                        }`}>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : user.role === 'teacher' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
                             {user.role === 'teacher' ? 'Викладач' : user.role === 'admin' ? 'Адміністратор' : 'Студент'}
                         </span>
                     </div>
                 </div>
-                
                 <div className="flex flex-wrap gap-3">
                     {user.role === 'student' && (
-                        <Link to="/my-grades" className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm">
-                            Мій щоденник
-                        </Link>
+                        <Link to="/my-grades" className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm">Мій щоденник</Link>
                     )}
                     {user.role === 'admin' && (
-                        <Link to="/admin" className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-sm">
-                            Панель Адміністратора
-                        </Link>
+                        <Link to="/admin" className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-sm">Панель Адміністратора</Link>
                     )}
-                    <button onClick={handleLogout} className="px-4 py-2 bg-white border border-gray-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors shadow-sm">
-                        Вийти
-                    </button>
+                    <button onClick={handleLogout} className="px-4 py-2 bg-white border border-gray-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors shadow-sm">Вийти</button>
                 </div>
             </div>
 
@@ -148,6 +122,7 @@ function Dashboard() {
                 <div className="mb-10 space-y-4">
                     {urgentDeadlines.length > 0 && (
                         <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                            {/* Виправлено flex-shrink-0 на shrink-0 */}
                             <svg className="w-6 h-6 text-red-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                             <div>
                                 <h3 className="text-sm font-bold text-red-800">Увага! Термінові завдання</h3>
@@ -155,12 +130,10 @@ function Dashboard() {
                             </div>
                         </div>
                     )}
-
                     {deadlines.length > 0 && (
                         <div className="p-5 bg-amber-50 border border-amber-200 rounded-xl">
                             <h3 className="text-sm font-bold text-amber-900 mb-3 flex items-center gap-2">
-                                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                Наближаються дедлайни
+                                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> Наближаються дедлайни
                             </h3>
                             <ul className="space-y-3">
                                 {deadlines.map(d => {
@@ -181,14 +154,9 @@ function Dashboard() {
 
             <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-gray-200 pb-4">
                 <h2 className="text-xl font-bold text-gray-900">Каталог курсів</h2>
-                
                 {user.role === 'teacher' && (
-                    <button 
-                        onClick={() => setIsCourseModalOpen(true)}
-                        className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-                        Створити курс
+                    <button onClick={() => setIsCourseModalOpen(true)} className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg> Створити курс
                     </button>
                 )}
             </div>
@@ -200,36 +168,27 @@ function Dashboard() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {courses.map((course) => {
-                        // Перевіряємо, чи студент записаний на поточний курс
                         const isEnrolled = enrolledCourseIds.includes(course.id);
-
                         return (
                             <div key={course.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col h-full hover:shadow-md transition-shadow group">
+                                {/* Виправлено flex-grow на grow */}
                                 <div className="grow mb-6">
                                     <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{course.title}</h3>
                                     <p className="text-sm text-gray-600 line-clamp-3">{course.description}</p>
                                 </div>
                                 <div className="pt-4 border-t border-gray-100">
                                     <p className="text-xs text-gray-500 mb-4 flex items-center gap-1.5">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                                        Викладач: <span className="font-medium text-gray-700">{course.teacher_name}</span>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg> Викладач: <span className="font-medium text-gray-700">{course.teacher_name}</span>
                                     </p>
-                                    
                                     <div className="flex flex-wrap gap-2">
-                                        <Link to={`/course/${course.id}`} className="flex-1 text-center px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
-                                            Відкрити
-                                        </Link>
-                                        
+                                        <Link to={`/course/${course.id}`} className="flex-1 text-center px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">Відкрити</Link>
                                         {user.role === 'student' && (
                                             isEnrolled ? (
                                                 <span className="flex-1 flex justify-center items-center gap-1 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-bold border border-green-200 cursor-default">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                                                    Ви записані
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Ви записані
                                                 </span>
                                             ) : (
-                                                <button onClick={() => handleEnroll(course.id)} className="flex-1 text-center px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
-                                                    Записатися
-                                                </button>
+                                                <button onClick={() => handleEnroll(course.id)} className="flex-1 text-center px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">Записатися</button>
                                             )
                                         )}
                                     </div>
@@ -249,26 +208,18 @@ function Dashboard() {
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
                         </div>
-                        
                         <form onSubmit={handleCreateCourse} className="p-6 space-y-5">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Назва курсу</label>
-                                <input type="text" placeholder="Наприклад: Основи програмування" value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} required 
-                                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" />
+                                <input type="text" placeholder="Наприклад: Основи програмування" value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} required className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Опис курсу</label>
-                                <textarea placeholder="Про що цей курс..." value={newCourseDesc} onChange={(e) => setNewCourseDesc(e.target.value)} rows="4" required
-                                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm resize-none" />
+                                <textarea placeholder="Про що цей курс..." value={newCourseDesc} onChange={(e) => setNewCourseDesc(e.target.value)} rows="4" required className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm resize-none" />
                             </div>
-                            
                             <div className="flex justify-end gap-3 pt-2">
-                                <button type="button" onClick={() => setIsCourseModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                    Скасувати
-                                </button>
-                                <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-                                    Створити курс
-                                </button>
+                                <button type="button" onClick={() => setIsCourseModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Скасувати</button>
+                                <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Створити курс</button>
                             </div>
                         </form>
                     </div>

@@ -18,7 +18,7 @@ function TakeQuiz() {
                 const token = localStorage.getItem('token');
                 if (!token) return navigate('/');
 
-                const res = await axios.get(`http://localhost:5000/api/quizzes/${quizId}`, {
+                const res = await axios.get(`/api/quizzes/${quizId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setQuiz(res.data);
@@ -44,12 +44,12 @@ function TakeQuiz() {
         setIsSubmitting(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post(`http://localhost:5000/api/quizzes/${quizId}/submit`, 
+            const res = await axios.post(`/api/quizzes/${quizId}/submit`, 
                 { answers },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             
-            setResultScore(res.data.score);
+            setResultScore(res.data.score); 
         } catch (err) {
             alert(err.response?.data?.error || 'Помилка при здачі тесту');
         } finally {

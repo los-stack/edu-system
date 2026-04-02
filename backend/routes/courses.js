@@ -164,26 +164,26 @@ router.get('/:id/students', authMiddleware, roleMiddleware, async (req, res) => 
 router.get('/:id/submissions', authMiddleware, async (req, res) => {
     try {
         const courseId = req.params.id;
-        
-        let query = `
-            SELECT s.assignment_id, s.student_id, s.file_url, u.name AS student_name 
+
+        const result = await db.query(`
+            SELECT 
+                s.assignment_id, 
+                s.student_id, 
+                s.file_url, 
+                u.name AS student_name,
+                g.score,       -- Підтягуємо бал
+                g.feedback     -- Підтягуємо коментар викладача
             FROM submissions s
             JOIN assignments a ON s.assignment_id = a.id
             JOIN users u ON s.student_id = u.id
+            LEFT JOIN grades g ON g.assignment_id = s.assignment_id AND g.student_id = s.student_id
             WHERE a.course_id = $1
-        `;
-        const params = [courseId];
+        `, [courseId]);
 
-        if (req.user.role === 'student') {
-            query += ` AND s.student_id = $2`;
-            params.push(req.user.id);
-        }
-
-        const result = await db.query(query, params);
         res.json(result.rows);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Помилка отримання робіт' });
+        res.status(500).json({ error: 'Помилка отримання зданих робіт' });
     }
 });
 
