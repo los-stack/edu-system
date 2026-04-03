@@ -2,10 +2,38 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
+const { body, validationResult } = require('express-validator'); 
 
 const router = express.Router();
 
-router.post('/register', async (req, res) => {
+router.post('/register', [
+    body('name')
+        .trim()
+        .notEmpty().withMessage('Ім\'я є обов\'язковим')
+        .isLength({ min: 2, max: 50 }).withMessage('Ім\'я має бути від 2 до 50 символів')
+        .escape(), 
+
+    body('email')
+        .trim()
+        .notEmpty().withMessage('Email є обов\'язковим')
+        .isEmail().withMessage('Некоректний формат email-адреси')
+        .normalizeEmail(),
+
+    body('password')
+        .notEmpty().withMessage('Пароль є обов\'язковим')
+        .isLength({ min: 6 }).withMessage('Пароль має містити мінімум 6 символів')
+        .matches(/\d/).withMessage('Пароль має містити хоча б одну цифру'),
+
+    body('role')
+        .optional()
+        .isIn(['student', 'teacher', 'admin']).withMessage('Вказана недопустима роль')
+], async (req, res) => {
+    
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+    }
+
     try {
         const { name, email, password, role } = req.body;
 
@@ -33,26 +61,42 @@ router.post('/register', async (req, res) => {
     }
 });
 
-router.post('/login', async (req, res) => {
+
+router.post('/login', [
+    body('email')
+        .trim()
+        .notEmpty().withMessage('Введіть email')
+        .isEmail().withMessage('Некоректний формат email')
+        .normalizeEmail(),
+        
+    body('password')
+        .notEmpty().withMessage('Введіть пароль')
+], async (req, res) => {
+    
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+    }
+
     try {
         const { email, password } = req.body;
 
         const userResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
         
         if (userResult.rows.length === 0) {
-            return res.status(401).json({ error: 'Користувача з таким email не знайдено' });
+            return res.status(401).json({ error: 'Невірний email або пароль' }); 
         }
 
         const user = userResult.rows[0];
 
         const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) {
-            return res.status(401).json({ error: 'Невірний пароль' });
+            return res.status(401).json({ error: 'Невірний email або пароль' });
         }
 
         const token = jwt.sign(
             { id: user.id, role: user.role },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET || 'secretkey', 
             { expiresIn: '24h' }
         );
 

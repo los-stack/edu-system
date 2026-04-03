@@ -13,7 +13,10 @@ function Login() {
         setMessage('');
         try {
             const response = await axios.post('/api/auth/login', { email, password });
+            
             localStorage.setItem('token', response.data.token);
+            localStorage.setItem('user', JSON.stringify(response.data.user)); 
+            
             navigate('/dashboard'); 
         } catch (error) {
             setMessage(error.response?.data?.error || 'Помилка з\'єднання з сервером');
@@ -21,7 +24,6 @@ function Login() {
     };
 
     return (
-        // Використовуємо висоту екрану для ідеального центрування
         <div className="flex flex-col justify-center items-center min-h-[75vh]">
             
             <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 p-8 sm:p-10">

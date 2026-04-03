@@ -7,6 +7,7 @@ import CoursePage from './pages/CoursePage';
 import MyGrades from './pages/MyGrades';
 import AdminDashboard from './pages/AdminDashboard';
 import TakeQuiz from './pages/TakeQuiz';
+import ProtectedRoute from './components/ProtectedRoute'; 
 
 function App() {
   return (
@@ -34,11 +35,36 @@ function App() {
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/course/:id" element={<CoursePage />} />
-            <Route path="/my-grades" element={<MyGrades />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/quiz/:quizId" element={<TakeQuiz />} />
+            
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/course/:id" element={
+              <ProtectedRoute>
+                <CoursePage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/my-grades" element={
+              <ProtectedRoute>
+                <MyGrades />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/quiz/:quizId" element={
+              <ProtectedRoute>
+                <TakeQuiz />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin" element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
           </Routes>
         </main>
         
