@@ -11,17 +11,15 @@ function MyGrades() {
     useEffect(() => {
         const fetchGrades = async () => {
             try {
-                const token = localStorage.getItem('token');
-                if (!token) return navigate('/');
-
-                const response = await axios.get('/api/users/my-grades', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                
+                const response = await axios.get('/api/users/my-grades');
                 setGrades(response.data);
             } catch (err) {
                 console.error(err);
                 setError('Не вдалося завантажити оцінки.');
+                if (err.response?.status === 401) {
+                    localStorage.removeItem('user');
+                    navigate('/');
+                }
             } finally {
                 setIsLoading(false);
             }

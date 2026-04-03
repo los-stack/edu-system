@@ -150,7 +150,6 @@ function CreateQuizModal({ isOpen, onClose, onCreate }) {
                     </form>
                 </div>
                 
-                {/* Футер модалки */}
                 <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 shrink-0">
                     <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                         Скасувати

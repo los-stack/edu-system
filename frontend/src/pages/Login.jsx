@@ -13,8 +13,7 @@ function Login() {
         setMessage('');
         try {
             const response = await axios.post('/api/auth/login', { email, password });
-            
-            localStorage.setItem('token', response.data.token);
+        
             localStorage.setItem('user', JSON.stringify(response.data.user)); 
             
             navigate('/dashboard'); 
@@ -25,16 +24,10 @@ function Login() {
 
     return (
         <div className="flex flex-col justify-center items-center min-h-[75vh]">
-            
             <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 p-8 sm:p-10">
-                
                 <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900">
-                        Увійдіть у свій акаунт
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-2">
-                        Вітаємо з поверненням на EPlatform
-                    </p>
+                    <h2 className="text-2xl font-bold text-gray-900">Увійдіть у свій акаунт</h2>
+                    <p className="text-sm text-gray-500 mt-2">Вітаємо з поверненням на EPlatform</p>
                 </div>
                 
                 <form onSubmit={handleLogin} className="space-y-5">
@@ -49,7 +42,6 @@ function Login() {
                             className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm"
                         />
                     </div>
-                    
                     <div>
                         <div className="flex justify-between items-center mb-1.5">
                             <label className="block text-sm font-medium text-gray-700">Пароль</label>
@@ -64,11 +56,7 @@ function Login() {
                             className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm"
                         />
                     </div>
-                    
-                    <button 
-                        type="submit"
-                        className="w-full flex justify-center py-2.5 px-4 mt-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                    >
+                    <button type="submit" className="w-full flex justify-center py-2.5 px-4 mt-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                         Увійти
                     </button>
                 </form>

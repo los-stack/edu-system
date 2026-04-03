@@ -10,29 +10,23 @@ function AdminDashboard() {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const token = localStorage.getItem('token');
-                if (!token) return navigate('/');
-
-                const response = await axios.get('/api/admin/users', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const response = await axios.get('/api/admin/users');
                 setUsers(response.data);
             } catch (err) {
                 console.error(err);
-                setError('Помилка доступу. Ви не адміністратор або токен застарів.');
+                setError('Помилка доступу. Ви не адміністратор або сесія застаріла.');
+                if (err.response?.status === 401) {
+                    localStorage.removeItem('user');
+                    navigate('/');
+                }
             }
         };
-        
         fetchUsers();
     }, [navigate]);
 
     const handleRoleChange = async (userId, newRole) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.put(`/api/admin/users/${userId}/role`, 
-                { role: newRole },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await axios.put(`/api/admin/users/${userId}/role`, { role: newRole });
             setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
         } catch (err) {
             console.error('Помилка:', err);
@@ -44,10 +38,7 @@ function AdminDashboard() {
         if (!window.confirm(`Ви впевнені, що хочете видалити користувача ${userName}? Всі його дані будуть втрачені!`)) return;
 
         try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`/api/admin/users/${userId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await axios.delete(`/api/admin/users/${userId}`);
             setUsers(users.filter(u => u.id !== userId));
         } catch (err) {
             console.error('Помилка:', err);
@@ -94,7 +85,6 @@ function AdminDashboard() {
                                     <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-3">
-                                                {/* Виправлено попередження Tailwind bg-gradient-to-br -> bg-linear-to-br */}
                                                 <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 font-bold text-sm border border-blue-200">
                                                     {user.name.charAt(0)}
                                                 </div>

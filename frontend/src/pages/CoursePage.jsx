@@ -27,30 +27,27 @@ function CoursePage() {
     useEffect(() => {
         const fetchCourseData = async () => {
             try {
-                const token = localStorage.getItem('token');
-                if (!token) return navigate('/');
-
-                const profileRes = await axios.get('/api/users/profile', { headers: { Authorization: `Bearer ${token}` } });
+                const profileRes = await axios.get('/api/users/profile');
                 const currentUser = profileRes.data;
                 setUser(currentUser);
 
-                const courseRes = await axios.get(`/api/courses/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                const courseRes = await axios.get(`/api/courses/${id}`);
                 setCourse(courseRes.data);
 
-                const assignmentsRes = await axios.get(`/api/courses/${id}/assignments`, { headers: { Authorization: `Bearer ${token}` } });
+                const assignmentsRes = await axios.get(`/api/courses/${id}/assignments`);
                 setAssignments(assignmentsRes.data);
 
-                const subRes = await axios.get(`/api/courses/${id}/submissions`, { headers: { Authorization: `Bearer ${token}` } });
+                const subRes = await axios.get(`/api/courses/${id}/submissions`);
                 setSubmissions(subRes.data);
 
-                const commentsRes = await axios.get(`/api/courses/${id}/comments`, { headers: { Authorization: `Bearer ${token}` } });
+                const commentsRes = await axios.get(`/api/courses/${id}/comments`);
                 setComments(commentsRes.data);
 
-                const quizzesRes = await axios.get(`/api/quizzes/course/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                const quizzesRes = await axios.get(`/api/quizzes/course/${id}`);
                 setQuizzes(quizzesRes.data);
 
                 if (currentUser.role === 'student') {
-                    const myResultsRes = await axios.get(`/api/quizzes/my-results/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                    const myResultsRes = await axios.get(`/api/quizzes/my-results/${id}`);
                     setMyQuizResults(myResultsRes.data);
                 }
             } catch (err) {
@@ -67,9 +64,8 @@ function CoursePage() {
 
     const handleCreateAssignment = async (formData) => {
         try {
-            const token = localStorage.getItem('token');
             const response = await axios.post(`/api/courses/${id}/assignments`, formData, { 
-                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } 
+                headers: { 'Content-Type': 'multipart/form-data' } 
             });
             setAssignments([...assignments, response.data.assignment]);
             setIsAssignmentModalOpen(false);
@@ -81,11 +77,8 @@ function CoursePage() {
 
     const handleCreateQuiz = async (quizData) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.post(`/api/quizzes/course/${id}`, quizData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const quizzesRes = await axios.get(`/api/quizzes/course/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.post(`/api/quizzes/course/${id}`, quizData);
+            const quizzesRes = await axios.get(`/api/quizzes/course/${id}`);
             setQuizzes(quizzesRes.data);
             setIsQuizModalOpen(false);
         } catch (err) {
@@ -97,7 +90,6 @@ function CoursePage() {
     const handleStudentSubmit = async (e, assignmentId) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('token');
             const fileInput = document.getElementById(`studentFile-${assignmentId}`);
             const file = fileInput.files[0];
             if (!file) return alert('Оберіть файл для завантаження!');
@@ -106,7 +98,7 @@ function CoursePage() {
             formData.append('file', file);
 
             const res = await axios.post(`/api/assignments/${assignmentId}/submit`, formData, {
-                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
 
             alert('Роботу успішно завантажено!');
@@ -127,10 +119,9 @@ function CoursePage() {
         const feedbackVal = e.target.elements.feedbackInput.value;
 
         try {
-            const token = localStorage.getItem('token');
             await axios.post(`/api/assignments/${assignmentId}/grade`, {
                 student_id: studentId, score: Number(scoreVal), feedback: feedbackVal
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            });
 
             alert('Оцінку успішно виставлено!');
             
@@ -149,12 +140,10 @@ function CoursePage() {
 
     const handleCommentSubmit = async (assignmentId, text) => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await axios.post(`/api/assignments/${assignmentId}/comments`, 
-                { text: text }, { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const res = await axios.post(`/api/assignments/${assignmentId}/comments`, { text: text });
             setComments([...comments, res.data.comment]);
-        } catch (err) {console.error('Помилка:', err);
+        } catch (err) {
+            console.error('Помилка:', err);
             alert('Помилка при відправці коментаря');
         }
     };
@@ -173,7 +162,6 @@ function CoursePage() {
                 <p className="text-gray-600 text-lg leading-relaxed">{course.description}</p>
             </div>
 
-            {/* ================= СЕКЦІЯ ТЕСТІВ ================= */}
             <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
                 <div className="flex items-center gap-3">
                     <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -232,7 +220,6 @@ function CoursePage() {
                 })}
             </div>
 
-            {/* ================= СЕКЦІЯ ЗАВДАНЬ ================= */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 border-b border-gray-200 pb-4">
                 <div className="flex items-center gap-3">
                     <h2 className="text-2xl font-bold text-gray-900">Завдання курсу</h2>

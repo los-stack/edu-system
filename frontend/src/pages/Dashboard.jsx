@@ -17,28 +17,25 @@ function Dashboard() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const token = localStorage.getItem('token');
-                if (!token) return navigate('/');
-
-                const profileResponse = await axios.get('/api/users/profile', { headers: { Authorization: `Bearer ${token}` } });
+                const profileResponse = await axios.get('/api/users/profile');
                 const currentUser = profileResponse.data;
                 setUser(currentUser); 
 
-                const coursesResponse = await axios.get('/api/courses', { headers: { Authorization: `Bearer ${token}` } });
+                const coursesResponse = await axios.get('/api/courses');
                 setCourses(coursesResponse.data);
 
                 if (currentUser.role === 'student') {
-                    const deadlinesRes = await axios.get('/api/users/my-deadlines', { headers: { Authorization: `Bearer ${token}` } });
+                    const deadlinesRes = await axios.get('/api/users/my-deadlines');
                     setDeadlines(deadlinesRes.data);
 
-                    const enrollmentsRes = await axios.get('/api/users/my-enrollments', { headers: { Authorization: `Bearer ${token}` } });
+                    const enrollmentsRes = await axios.get('/api/users/my-enrollments');
                     setEnrolledCourseIds(enrollmentsRes.data);
                 }
             } catch (err) {
                 console.error(err);
                 setError('Не вдалося завантажити дані.');
                 if (err.response && err.response.status === 401) {
-                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
                     navigate('/');
                 }
             }
@@ -46,20 +43,20 @@ function Dashboard() {
         fetchData();
     }, [navigate]);
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        navigate('/');
+    const handleLogout = async () => {
+        try {
+            await axios.post('/api/auth/logout');
+            localStorage.removeItem('user');
+            navigate('/');
+        } catch (err) {
+            console.error('Помилка при виході:', err);
+        }
     };
 
     const handleCreateCourse = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.post('/api/courses', 
-                { title: newCourseTitle, description: newCourseDesc },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            
+            const response = await axios.post('/api/courses', { title: newCourseTitle, description: newCourseDesc });
             const newCourse = { ...response.data.course, teacher_name: user.name };
             setCourses([newCourse, ...courses]); 
             setNewCourseTitle('');
@@ -73,16 +70,11 @@ function Dashboard() {
 
     const handleEnroll = async (courseId) => {
         try {
-            const token = localStorage.getItem('token');
-            // Виправлено бектики
-            const response = await axios.post(`/api/courses/${courseId}/enroll`, 
-                {}, { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const response = await axios.post(`/api/courses/${courseId}/enroll`, {});
             setEnrolledCourseIds(prev => [...prev, courseId]);
             alert(response.data.message); 
         } catch (err) {
-            if (err.response && err.response.data) alert(err.response.data.error);
-            else alert('Помилка при записі на курс');
+            alert(err.response?.data?.error || 'Помилка при записі на курс');
         }
     };
 
@@ -122,7 +114,6 @@ function Dashboard() {
                 <div className="mb-10 space-y-4">
                     {urgentDeadlines.length > 0 && (
                         <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-                            {/* Виправлено flex-shrink-0 на shrink-0 */}
                             <svg className="w-6 h-6 text-red-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                             <div>
                                 <h3 className="text-sm font-bold text-red-800">Увага! Термінові завдання</h3>
@@ -171,7 +162,6 @@ function Dashboard() {
                         const isEnrolled = enrolledCourseIds.includes(course.id);
                         return (
                             <div key={course.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col h-full hover:shadow-md transition-shadow group">
-                                {/* Виправлено flex-grow на grow */}
                                 <div className="grow mb-6">
                                     <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{course.title}</h3>
                                     <p className="text-sm text-gray-600 line-clamp-3">{course.description}</p>

@@ -11,10 +11,7 @@ function QuizResultsModal({ isOpen, onClose, quiz }) {
             const fetchResults = async () => {
                 setIsLoading(true);
                 try {
-                    const token = localStorage.getItem('token');
-                    const res = await axios.get(`/api/quizzes/${quiz.id}/results`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
+                    const res = await axios.get(`/api/quizzes/${quiz.id}/results`);
                     setResults(res.data);
                 } catch (err) {
                     console.error('Помилка:', err);
@@ -32,6 +29,7 @@ function QuizResultsModal({ isOpen, onClose, quiz }) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden transform transition-all">
+                
                 <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
                     <div>
                         <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -44,6 +42,7 @@ function QuizResultsModal({ isOpen, onClose, quiz }) {
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
+
                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
                     {isLoading ? (
                         <div className="flex justify-center py-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
@@ -58,9 +57,9 @@ function QuizResultsModal({ isOpen, onClose, quiz }) {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Студент</th>
-                                        <th scope="col" className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Оцінка</th>
-                                        <th scope="col" className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Дата здачі</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Студент</th>
+                                        <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Оцінка</th>
+                                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Дата</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-100">
@@ -71,10 +70,7 @@ function QuizResultsModal({ isOpen, onClose, quiz }) {
                                                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs border border-blue-200">
                                                         {res.student_name.charAt(0)}
                                                     </div>
-                                                    <div>
-                                                        <div className="text-sm font-bold text-gray-900">{res.student_name}</div>
-                                                        <div className="text-xs text-gray-500">{res.email}</div>
-                                                    </div>
+                                                    <div className="text-sm font-bold text-gray-900">{res.student_name}</div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">

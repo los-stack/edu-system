@@ -1,21 +1,18 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = function (req, res, next) {
-    const authHeader = req.header('Authorization');
+    const token = req.cookies.token; 
 
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Немає доступу. Токен відсутній.' });
+    if (!token) {
+        return res.status(401).json({ error: 'Немає доступу. Авторизуйтесь.' });
     }
 
     try {
-        const token = authHeader.replace('Bearer ', '');
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secretkey');
         req.user = decoded;
-        
         next();
-    } catch (error) {
-        res.status(401).json({ error: 'Недійсний токен. Увійдіть у систему заново.' });
+    } catch (err) {
+        res.clearCookie('token');
+        return res.status(401).json({ error: 'Сесія закінчилась. Будь ласка, увійдіть знову.' });
     }
 };

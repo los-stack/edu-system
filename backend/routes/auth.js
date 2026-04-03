@@ -100,9 +100,15 @@ router.post('/login', [
             { expiresIn: '24h' }
         );
 
+        res.cookie('token', token, {
+            httpOnly: true, 
+            secure: process.env.NODE_ENV === 'production', 
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000 
+        });
+
         res.json({
             message: 'Успішний вхід!',
-            token, 
             user: { id: user.id, name: user.name, role: user.role }
         });
 
@@ -110,6 +116,11 @@ router.post('/login', [
         console.error(error.message);
         res.status(500).json({ error: 'Помилка сервера під час входу' });
     }
+});
+
+router.post('/logout', (req, res) => {
+    res.clearCookie('token'); 
+    res.json({ message: 'Вихід успішний' });
 });
 
 module.exports = router;
