@@ -51,19 +51,19 @@ function TakeQuiz() {
         }
     };
 
-    if (error) return <div className="p-8 text-center text-red-600 font-bold mt-10">{error}</div>;
+    if (error) return <div className="p-8 text-center text-red-600 dark:text-red-400 font-bold mt-10">{error}</div>;
     if (!quiz) return <div className="flex justify-center mt-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
 
     if (resultScore !== null) {
         return (
-            <div className="max-w-2xl mx-auto mt-20 bg-white p-10 rounded-3xl shadow-lg border border-gray-100 text-center">
-                <div className="w-20 h-20 mx-auto bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
+            <div className="max-w-2xl mx-auto mt-20 bg-white dark:bg-gray-800 p-10 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 text-center transition-colors">
+                <div className="w-20 h-20 mx-auto bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-6">
                     <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                 </div>
-                <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Тест завершено!</h1>
-                <p className="text-gray-500 mb-8">Ваш результат автоматично збережено в системі.</p>
-                <div className="text-6xl font-black text-blue-600 mb-8">{resultScore} <span className="text-2xl text-gray-400">/ 100</span></div>
-                <button onClick={() => navigate(`/course/${quiz.course_id}`)} className="px-8 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors">Повернутися до курсу</button>
+                <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Тест завершено!</h1>
+                <p className="text-gray-500 dark:text-gray-400 mb-8">Ваш результат автоматично збережено в системі.</p>
+                <div className="text-6xl font-black text-blue-600 dark:text-blue-400 mb-8">{resultScore} <span className="text-2xl text-gray-400 dark:text-gray-500">/ 100</span></div>
+                <button onClick={() => navigate(`/course/${quiz.course_id}`)} className="px-8 py-3 bg-gray-900 dark:bg-blue-600 text-white font-bold rounded-xl hover:bg-gray-800 dark:hover:bg-blue-700 transition-colors">Повернутися до курсу</button>
             </div>
         );
     }
@@ -71,22 +71,22 @@ function TakeQuiz() {
     return (
         <div className="max-w-3xl mx-auto pb-20 pt-10 px-4">
             <div className="mb-8 text-center">
-                <h1 className="text-3xl font-extrabold text-gray-900 mb-3">{quiz.title}</h1>
-                <p className="text-gray-600">{quiz.description}</p>
+                <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">{quiz.title}</h1>
+                <p className="text-gray-600 dark:text-gray-400">{quiz.description}</p>
             </div>
 
             <div className="space-y-8">
                 {quiz.questions.map((q, index) => (
-                    <div key={q.id} className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-200">
-                        <h3 className="text-lg font-bold text-gray-900 mb-5">
-                            <span className="text-blue-600 mr-2">{index + 1}.</span> 
+                    <div key={q.id} className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-5">
+                            <span className="text-blue-600 dark:text-blue-400 mr-2">{index + 1}.</span> 
                             {q.question_text}
                         </h3>
                         <div className="space-y-3 pl-2 sm:pl-6">
                             {q.options.map(opt => (
-                                <label key={opt.id} className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-colors ${answers[q.id] === opt.id ? 'bg-blue-50 border-blue-400' : 'bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50'}`}>
-                                    <input type="radio" name={`question-${q.id}`} value={opt.id} checked={answers[q.id] === opt.id} onChange={() => handleOptionSelect(q.id, opt.id)} className="w-5 h-5 text-blue-600 focus:ring-blue-500" />
-                                    <span className={`text-sm sm:text-base ${answers[q.id] === opt.id ? 'font-medium text-blue-900' : 'text-gray-700'}`}>{opt.answer_text}</span>
+                                <label key={opt.id} className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-colors ${answers[q.id] === opt.id ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-400 dark:border-blue-500/50' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-500/50 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
+                                    <input type="radio" name={`question-${q.id}`} value={opt.id} checked={answers[q.id] === opt.id} onChange={() => handleOptionSelect(q.id, opt.id)} className="w-5 h-5 text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-offset-gray-900" />
+                                    <span className={`text-sm sm:text-base ${answers[q.id] === opt.id ? 'font-medium text-blue-900 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>{opt.answer_text}</span>
                                 </label>
                             ))}
                         </div>
