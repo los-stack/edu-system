@@ -61,7 +61,6 @@ router.post('/register', [
     }
 });
 
-
 router.post('/login', [
     body('email')
         .trim()
@@ -109,7 +108,12 @@ router.post('/login', [
 
         res.json({
             message: 'Успішний вхід!',
-            user: { id: user.id, name: user.name, role: user.role }
+            user: { 
+                id: user.id, 
+                name: user.name, 
+                role: user.role,
+                avatar_url: user.avatar_url
+            }
         });
 
     } catch (error) {

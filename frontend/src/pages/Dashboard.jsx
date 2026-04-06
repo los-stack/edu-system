@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import toast from 'react-hot-toast'; 
+import toast from 'react-hot-toast';
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -21,6 +21,9 @@ function Dashboard() {
                 const profileResponse = await axios.get('/api/users/profile');
                 const currentUser = profileResponse.data;
                 setUser(currentUser); 
+
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                window.dispatchEvent(new Event('user-updated'));
 
                 const coursesResponse = await axios.get('/api/courses');
                 setCourses(coursesResponse.data);
@@ -48,6 +51,7 @@ function Dashboard() {
         try {
             await axios.post('/api/auth/logout');
             localStorage.removeItem('user');
+            window.dispatchEvent(new Event('user-updated')); 
             navigate('/');
         } catch (err) {
             console.error('Помилка при виході:', err);
@@ -63,10 +67,10 @@ function Dashboard() {
             setNewCourseTitle('');
             setNewCourseDesc('');
             setIsCourseModalOpen(false);
-            toast.success('Курс успішно створено!'); 
+            toast.success('Курс успішно створено!');
         } catch (err) {
             console.error('Помилка:', err);
-            toast.error('Помилка при створенні курсу'); 
+            toast.error('Помилка при створенні курсу');
         }
     };
 
@@ -76,7 +80,7 @@ function Dashboard() {
             setEnrolledCourseIds(prev => [...prev, courseId]);
             toast.success(response.data.message);
         } catch (err) {
-            toast.error(err.response?.data?.error || 'Помилка при записі на курс'); 
+            toast.error(err.response?.data?.error || 'Помилка при записі на курс');
         }
     };
 
