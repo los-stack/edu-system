@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import toast from 'react-hot-toast'; 
 
 function Register() {
     const [name, setName] = useState('');
@@ -15,10 +16,11 @@ function Register() {
         setMessage('');
         try {
             await axios.post('/api/auth/register', { name, email, password, role });
-            alert('Реєстрація успішна! Тепер увійдіть.');
+            toast.success('Реєстрація успішна! Тепер увійдіть.', { duration: 4000 });
             navigate('/');
         } catch (error) {
             setMessage(error.response?.data?.error || 'Помилка з\'єднання з сервером');
+            toast.error('Не вдалося зареєструватися');
         }
     };
 

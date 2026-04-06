@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast'; 
 
 function CreateQuizModal({ isOpen, onClose, onCreate }) {
     const [title, setTitle] = useState('');
@@ -58,7 +59,7 @@ function CreateQuizModal({ isOpen, onClose, onCreate }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        if (questions.length === 0) return alert("Додайте хоча б одне питання!");
+        if (questions.length === 0) return toast.error("Додайте хоча б одне питання!"); 
         
         const payload = { title, description, questions };
         onCreate(payload);
@@ -68,15 +69,15 @@ function CreateQuizModal({ isOpen, onClose, onCreate }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-8 overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 dark:bg-gray-900/80 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl my-8 overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
                 
-                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 shrink-0">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
                         Конструктор тесту
                     </h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
@@ -84,27 +85,27 @@ function CreateQuizModal({ isOpen, onClose, onCreate }) {
                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
                     <form id="quizForm" onSubmit={handleSubmit} className="space-y-6">
                         
-                        <div className="space-y-4 bg-gray-50 p-5 rounded-xl border border-gray-200">
+                        <div className="space-y-4 bg-gray-50 dark:bg-gray-900 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">Назва тесту</label>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Назва тесту</label>
                                 <input type="text" placeholder="Наприклад: Підсумковий тест з модуля 1" value={title} onChange={(e) => setTitle(e.target.value)} required 
-                                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold" />
+                                    className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold" />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">Короткий опис або інструкція</label>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Короткий опис або інструкція</label>
                                 <textarea placeholder="У вас буде 15 хвилин на проходження..." value={description} onChange={(e) => setDescription(e.target.value)} rows="2"
-                                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none" />
+                                    className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none" />
                             </div>
                         </div>
 
                         <div className="space-y-6">
                             {questions.map((q, qIndex) => (
-                                <div key={qIndex} className="p-5 border border-gray-200 rounded-xl relative bg-white shadow-sm">
+                                <div key={qIndex} className="p-5 border border-gray-200 dark:border-gray-700 rounded-xl relative bg-white dark:bg-gray-800 shadow-sm">
                                     <div className="flex justify-between items-start mb-4 gap-4">
                                         <div className="flex-1">
-                                            <label className="block text-sm font-bold text-gray-800 mb-1.5">Питання {qIndex + 1}</label>
+                                            <label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-1.5">Питання {qIndex + 1}</label>
                                             <input type="text" placeholder="Введіть запитання..." value={q.text} onChange={(e) => updateQuestionText(e.target.value, qIndex)} required 
-                                                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                                                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
                                         </div>
                                         <button type="button" onClick={() => removeQuestion(qIndex)} className="text-red-400 hover:text-red-600 mt-6 p-1 transition-colors" title="Видалити питання">
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -112,9 +113,9 @@ function CreateQuizModal({ isOpen, onClose, onCreate }) {
                                     </div>
 
                                     <div className="space-y-2.5 pl-2">
-                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Варіанти відповідей (виберіть правильний)</label>
+                                        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Варіанти відповідей (виберіть правильний)</label>
                                         {q.options.map((opt, optIndex) => (
-                                            <div key={optIndex} className={`flex items-center gap-3 p-2 rounded-lg border transition-colors ${opt.isCorrect ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
+                                            <div key={optIndex} className={`flex items-center gap-3 p-2 rounded-lg border transition-colors ${opt.isCorrect ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/30' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}`}>
                                                 <input 
                                                     type="radio" 
                                                     name={`correct-${qIndex}`} 
@@ -123,7 +124,7 @@ function CreateQuizModal({ isOpen, onClose, onCreate }) {
                                                     className="w-4 h-4 text-green-600 focus:ring-green-500 cursor-pointer"
                                                 />
                                                 <input type="text" placeholder={`Варіант ${optIndex + 1}`} value={opt.text} onChange={(e) => updateOptionText(e.target.value, qIndex, optIndex)} required 
-                                                    className={`flex-1 px-3 py-1.5 text-sm bg-transparent border-none focus:ring-0 ${opt.isCorrect ? 'font-medium text-green-900' : 'text-gray-700'}`} />
+                                                    className={`flex-1 px-3 py-1.5 text-sm bg-transparent border-none focus:ring-0 ${opt.isCorrect ? 'font-medium text-green-900 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'}`} />
                                                 
                                                 {q.options.length > 2 && (
                                                     <button type="button" onClick={() => removeOption(qIndex, optIndex)} className="text-gray-400 hover:text-red-500 transition-colors">
@@ -134,7 +135,7 @@ function CreateQuizModal({ isOpen, onClose, onCreate }) {
                                         ))}
                                     </div>
                                     
-                                    <button type="button" onClick={() => addOption(qIndex)} className="mt-3 flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                                    <button type="button" onClick={() => addOption(qIndex)} className="mt-3 flex items-center gap-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors">
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
                                         Додати варіант
                                     </button>
@@ -142,7 +143,7 @@ function CreateQuizModal({ isOpen, onClose, onCreate }) {
                             ))}
                         </div>
                         
-                        <button type="button" onClick={addQuestion} className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 font-bold text-sm hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors flex justify-center items-center gap-2">
+                        <button type="button" onClick={addQuestion} className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-600 dark:text-gray-400 font-bold text-sm hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex justify-center items-center gap-2">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
                             Додати наступне питання
                         </button>
@@ -150,8 +151,8 @@ function CreateQuizModal({ isOpen, onClose, onCreate }) {
                     </form>
                 </div>
                 
-                <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 shrink-0">
-                    <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-gray-800/50 shrink-0">
+                    <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         Скасувати
                     </button>
                     <button type="submit" form="quizForm" className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2">

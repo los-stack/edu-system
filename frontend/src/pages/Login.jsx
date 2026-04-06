@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import toast from 'react-hot-toast'; 
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [message, setMessage] = useState('');
     const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        setMessage('');
         try {
             const response = await axios.post('/api/auth/login', { email, password });
             localStorage.setItem('user', JSON.stringify(response.data.user)); 
+            
+            toast.success('Успішний вхід!'); 
             navigate('/dashboard'); 
         } catch (error) {
-            setMessage(error.response?.data?.error || 'Помилка з\'єднання з сервером');
+            toast.error(error.response?.data?.error || 'Помилка з\'єднання з сервером'); 
         }
     };
 
@@ -58,12 +59,6 @@ function Login() {
                         Увійти
                     </button>
                 </form>
-
-                {message && (
-                    <div className="mt-5 p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm border border-red-200 dark:border-red-800">
-                        {message}
-                    </div>
-                )}
 
                 <div className="mt-8 text-center">
                     <p className="text-sm text-gray-600 dark:text-gray-400">

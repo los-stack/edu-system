@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'; 
+import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Register from './pages/Register';
@@ -8,11 +9,19 @@ import MyGrades from './pages/MyGrades';
 import AdminDashboard from './pages/AdminDashboard';
 import TakeQuiz from './pages/TakeQuiz';
 import ProtectedRoute from './components/ProtectedRoute'; 
-import ThemeToggle from './components/ThemeToggle'; 
+import ThemeToggle from './components/ThemeToggle';
 
 function App() {
   return (
     <BrowserRouter>
+      <Toaster 
+        position="top-right" 
+        toastOptions={{
+          className: 'dark:bg-gray-800 dark:text-white border dark:border-gray-700',
+          duration: 3000,
+        }} 
+      />
+
       <div className="min-h-screen flex flex-col font-sans text-gray-900 bg-gray-50 dark:bg-gray-950 dark:text-gray-100 transition-colors duration-200">
         
         <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-200">

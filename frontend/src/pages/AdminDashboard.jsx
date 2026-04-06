@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import toast from 'react-hot-toast'; 
+import ConfirmModal from '../components/ConfirmModal'; 
 
 function AdminDashboard() {
     const [users, setUsers] = useState([]);
     const [error, setError] = useState('');
+    const [userToDelete, setUserToDelete] = useState(null); 
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -28,21 +31,29 @@ function AdminDashboard() {
         try {
             await axios.put(`/api/admin/users/${userId}/role`, { role: newRole });
             setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
+            toast.success('Роль користувача успішно змінено!'); 
         } catch (err) {
             console.error('Помилка:', err);
-            alert('Помилка зміни ролі');
+            toast.error('Помилка при зміні ролі'); 
         }
     };
 
-    const handleDeleteUser = async (userId, userName) => {
-        if (!window.confirm(`Ви впевнені, що хочете видалити користувача ${userName}? Всі його дані будуть втрачені!`)) return;
+    const requestDeleteUser = (user) => {
+        setUserToDelete(user);
+    };
 
+    const confirmDelete = async () => {
+        if (!userToDelete) return;
+        
         try {
-            await axios.delete(`/api/admin/users/${userId}`);
-            setUsers(users.filter(u => u.id !== userId));
+            await axios.delete(`/api/admin/users/${userToDelete.id}`);
+            setUsers(users.filter(u => u.id !== userToDelete.id));
+            toast.success(`Користувача ${userToDelete.name} успішно видалено`);
         } catch (err) {
             console.error('Помилка:', err);
-            alert('Помилка при видаленні');
+            toast.error('Помилка при видаленні користувача');
+        } finally {
+            setUserToDelete(null); 
         }
     };
 
@@ -105,7 +116,7 @@ function AdminDashboard() {
                                             </select>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onClick={() => handleDeleteUser(user.id, user.name)} className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors inline-flex items-center gap-1" title="Видалити користувача">
+                                            <button onClick={() => requestDeleteUser(user)} className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors inline-flex items-center gap-1" title="Видалити користувача">
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                             </button>
                                         </td>
@@ -116,6 +127,14 @@ function AdminDashboard() {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal 
+                isOpen={!!userToDelete} 
+                onClose={() => setUserToDelete(null)} 
+                onConfirm={confirmDelete}
+                title="Видалення користувача"
+                message={`Ви дійсно хочете назавжди видалити користувача "${userToDelete?.name}"? Всі його дані, включаючи оцінки та курси, будуть втрачені.`}
+            />
         </div>
     );
 }

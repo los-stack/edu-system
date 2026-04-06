@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import toast from 'react-hot-toast'; 
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -62,9 +63,10 @@ function Dashboard() {
             setNewCourseTitle('');
             setNewCourseDesc('');
             setIsCourseModalOpen(false);
+            toast.success('Курс успішно створено!'); 
         } catch (err) {
             console.error('Помилка:', err);
-            alert('Помилка при створенні курсу');
+            toast.error('Помилка при створенні курсу'); 
         }
     };
 
@@ -72,9 +74,9 @@ function Dashboard() {
         try {
             const response = await axios.post(`/api/courses/${courseId}/enroll`, {});
             setEnrolledCourseIds(prev => [...prev, courseId]);
-            alert(response.data.message); 
+            toast.success(response.data.message);
         } catch (err) {
-            alert(err.response?.data?.error || 'Помилка при записі на курс');
+            toast.error(err.response?.data?.error || 'Помилка при записі на курс'); 
         }
     };
 

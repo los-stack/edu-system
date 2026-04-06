@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import toast from 'react-hot-toast'; 
+import ConfirmModal from '../components/ConfirmModal'; 
 
 function TakeQuiz() {
     const { quizId } = useParams();
@@ -11,6 +13,7 @@ function TakeQuiz() {
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [resultScore, setResultScore] = useState(null);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false); 
 
     useEffect(() => {
         const fetchQuiz = async () => {
@@ -33,19 +36,22 @@ function TakeQuiz() {
         setAnswers({ ...answers, [questionId]: optionId });
     };
 
-    const handleSubmit = async () => {
+    const handleAttemptSubmit = () => {
         if (Object.keys(answers).length < quiz.questions.length) {
-            return alert("Будь ласка, дайте відповідь на всі запитання перед завершенням!");
+            return toast.error("Будь ласка, дайте відповідь на всі запитання перед завершенням!"); 
         }
+        setIsConfirmOpen(true);
+    };
 
-        if (!window.confirm("Ви впевнені, що хочете завершити тест?")) return;
-
+    const confirmSubmit = async () => {
+        setIsConfirmOpen(false);
         setIsSubmitting(true);
         try {
             const res = await axios.post(`/api/quizzes/${quizId}/submit`, { answers });
             setResultScore(res.data.score);
+            toast.success('Тест успішно завершено!'); 
         } catch (err) {
-            alert(err.response?.data?.error || 'Помилка при здачі тесту');
+            toast.error(err.response?.data?.error || 'Помилка при здачі тесту'); 
         } finally {
             setIsSubmitting(false);
         }
@@ -95,11 +101,19 @@ function TakeQuiz() {
             </div>
 
             <div className="mt-10 flex justify-end">
-                <button onClick={handleSubmit} disabled={isSubmitting} className="px-8 py-4 bg-blue-600 text-white text-lg font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30 disabled:opacity-50 flex items-center gap-2">
+                <button onClick={handleAttemptSubmit} disabled={isSubmitting} className="px-8 py-4 bg-blue-600 text-white text-lg font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30 disabled:opacity-50 flex items-center gap-2">
                     {isSubmitting ? 'Перевіряємо...' : 'Завершити тест'}
                     {!isSubmitting && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>}
                 </button>
             </div>
+
+            <ConfirmModal 
+                isOpen={isConfirmOpen} 
+                onClose={() => setIsConfirmOpen(false)} 
+                onConfirm={confirmSubmit}
+                title="Завершення тесту"
+                message="Ви впевнені, що хочете завершити тест? Після підтвердження ваші відповіді будуть надіслані на перевірку, і ви не зможете їх змінити."
+            />
         </div>
     );
 }

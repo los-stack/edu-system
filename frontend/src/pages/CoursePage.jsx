@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import toast from 'react-hot-toast'; 
 import CreateAssignmentModal from '../components/CreateAssignmentModal'; 
 import CommentSection from '../components/CommentSection';             
 import CreateQuizModal from '../components/CreateQuizModal';
@@ -69,9 +70,10 @@ function CoursePage() {
             });
             setAssignments([...assignments, response.data.assignment]);
             setIsAssignmentModalOpen(false);
+            toast.success('Завдання додано!'); 
         } catch (err) {
             console.error('Помилка:', err);
-            alert('Помилка при створенні завдання');
+            toast.error('Помилка при створенні завдання'); 
         }
     };
 
@@ -81,9 +83,10 @@ function CoursePage() {
             const quizzesRes = await axios.get(`/api/quizzes/course/${id}`);
             setQuizzes(quizzesRes.data);
             setIsQuizModalOpen(false);
+            toast.success('Тест створено!'); 
         } catch (err) {
             console.error('Помилка:', err);
-            alert('Помилка при створенні тесту');
+            toast.error('Помилка при створенні тесту'); 
         }
     };
 
@@ -92,7 +95,7 @@ function CoursePage() {
         try {
             const fileInput = document.getElementById(`studentFile-${assignmentId}`);
             const file = fileInput.files[0];
-            if (!file) return alert('Оберіть файл для завантаження!');
+            if (!file) return toast.error('Оберіть файл для завантаження!'); 
 
             const formData = new FormData();
             formData.append('file', file);
@@ -101,7 +104,7 @@ function CoursePage() {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            alert('Роботу успішно завантажено!');
+            toast.success('Роботу успішно завантажено!');
             setSubmissions(prev => {
                 const filtered = prev.filter(s => !(s.assignment_id === assignmentId && s.student_id === user.id));
                 return [...filtered, { assignment_id: assignmentId, student_id: user.id, file_url: res.data.submission.file_url, student_name: user.name }];
@@ -109,7 +112,7 @@ function CoursePage() {
             fileInput.value = ''; 
         } catch (err) {
             console.error('Помилка:', err);
-            alert('Помилка при відправці роботи');
+            toast.error('Помилка при відправці роботи'); 
         }
     };
 
@@ -123,7 +126,7 @@ function CoursePage() {
                 student_id: studentId, score: Number(scoreVal), feedback: feedbackVal
             });
 
-            alert('Оцінку успішно виставлено!');
+            toast.success('Оцінку успішно виставлено!');
             
             setSubmissions(prev => prev.map(sub => 
                 (sub.assignment_id === assignmentId && sub.student_id === studentId) 
@@ -134,7 +137,7 @@ function CoursePage() {
             e.target.reset(); 
         } catch (err) {
             console.error('Помилка:', err);
-            alert('Помилка при виставленні оцінки');
+            toast.error('Помилка при виставленні оцінки'); 
         }
     };
 
@@ -144,7 +147,7 @@ function CoursePage() {
             setComments([...comments, res.data.comment]);
         } catch (err) {
             console.error('Помилка:', err);
-            alert('Помилка при відправці коментаря');
+            toast.error('Помилка при відправці коментаря'); 
         }
     };
 
