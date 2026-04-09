@@ -18,6 +18,7 @@ function CoursePage() {
     const [comments, setComments] = useState([]);
     const [quizzes, setQuizzes] = useState([]); 
     const [myQuizResults, setMyQuizResults] = useState([]); 
+    const [analytics, setAnalytics] = useState(null); 
     const [error, setError] = useState('');
 
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
@@ -51,6 +52,12 @@ function CoursePage() {
                     const myResultsRes = await axios.get(`/api/quizzes/my-results/${id}`);
                     setMyQuizResults(myResultsRes.data);
                 }
+
+                if (currentUser.role === 'teacher') {
+                    const analyticsRes = await axios.get(`/api/courses/${id}/analytics`);
+                    setAnalytics(analyticsRes.data);
+                }
+
             } catch (error) {
                 console.error('Помилка завантаження курсу:', error);
                 setError('Не вдалося завантажити дані курсу.');
@@ -134,6 +141,10 @@ function CoursePage() {
                     : sub
             ));
             
+            if (analytics && analytics.pendingReviews > 0) {
+                setAnalytics(prev => ({ ...prev, pendingReviews: prev.pendingReviews - 1 }));
+            }
+            
             e.target.reset(); 
         } catch (error) {
             console.error('Помилка виставлення оцінки:', error);
@@ -189,6 +200,56 @@ function CoursePage() {
                                 <div className="absolute top-0 left-0 bottom-0 right-0 bg-white/20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)' }}></div>
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {user.role === 'teacher' && analytics && (
+                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-5">
+                        
+                        <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition-colors shadow-sm hover:shadow-md">
+                            <div className="flex items-center justify-between mb-3">
+                                <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Студентів</p>
+                                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/30">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                                </div>
+                            </div>
+                            <div className="flex items-baseline gap-2">
+                                <p className="text-4xl font-black text-gray-900 dark:text-white leading-none">{analytics.enrolledStudents}</p>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">записано на курс</p>
+                            </div>
+                        </div>
+                        
+                        <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition-colors shadow-sm hover:shadow-md">
+                            <div className="flex items-center justify-between mb-3">
+                                <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Прогрес групи</p>
+                                <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800/30">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                                </div>
+                            </div>
+                            <div className="flex items-baseline gap-1 mb-2">
+                                <p className="text-4xl font-black text-gray-900 dark:text-white leading-none">{analytics.cohortProgress}%</p>
+                            </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                                <div 
+                                    className="bg-green-500 h-2 rounded-full transition-all duration-1000 ease-out" 
+                                    style={{ width: `${analytics.cohortProgress}%` }}
+                                ></div>
+                            </div>
+                        </div>
+
+                        <div className={`p-6 rounded-2xl border flex flex-col justify-center transition-colors shadow-sm hover:shadow-md ${analytics.pendingReviews > 0 ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/30' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-700'}`}>
+                            <div className="flex items-center justify-between mb-3">
+                                <p className={`text-sm font-bold uppercase tracking-wider ${analytics.pendingReviews > 0 ? 'text-amber-700 dark:text-amber-500' : 'text-gray-500 dark:text-gray-400'}`}>На перевірку</p>
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center border ${analytics.pendingReviews > 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/30' : 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700'}`}>
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                            </div>
+                            <div className="flex items-baseline gap-2">
+                                <p className={`text-4xl font-black leading-none ${analytics.pendingReviews > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-gray-900 dark:text-white'}`}>{analytics.pendingReviews}</p>
+                                <p className={`text-sm font-medium ${analytics.pendingReviews > 0 ? 'text-amber-600 dark:text-amber-500' : 'text-gray-500 dark:text-gray-400'}`}>нових робіт</p>
+                            </div>
+                        </div>
+                        
                     </div>
                 )}
             </div>

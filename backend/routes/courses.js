@@ -208,4 +208,67 @@ router.get('/:id/comments', authMiddleware, async (req, res) => {
     }
 });
 
+router.get('/:id/analytics', authMiddleware, async (req, res) => {
+    try {
+        const courseId = req.params.id;
+
+        const enrolledRes = await db.query('SELECT COUNT(*) FROM enrollments WHERE course_id = $1', [courseId]);
+        const enrolledStudents = parseInt(enrolledRes.rows[0].count);
+
+        const pendingRes = await db.query(`
+            SELECT COUNT(*)
+            FROM submissions s
+            JOIN assignments a ON s.assignment_id = a.id
+            LEFT JOIN grades g ON g.assignment_id = s.assignment_id AND g.student_id = s.student_id
+            WHERE a.course_id = $1 AND g.score IS NULL
+        `, [courseId]);
+        const pendingReviews = parseInt(pendingRes.rows[0].count);
+        const progressRes = await db.query(`
+            WITH course_totals AS (
+                SELECT 
+                    (SELECT COUNT(*) FROM assignments WHERE course_id = $1) AS assignments_count,
+                    (SELECT COUNT(*) FROM quizzes WHERE course_id = $1) AS quizzes_count
+            ),
+            completed_totals AS (
+                SELECT 
+                    (SELECT COUNT(DISTINCT (s.assignment_id, s.student_id)) 
+                     FROM submissions s 
+                     JOIN assignments a ON s.assignment_id = a.id 
+                     WHERE a.course_id = $1) AS completed_assignments,
+                    
+                    (SELECT COUNT(DISTINCT (qr.quiz_id, qr.student_id)) 
+                     FROM quiz_results qr 
+                     JOIN quizzes q ON qr.quiz_id = q.id 
+                     WHERE q.course_id = $1) AS completed_quizzes
+            )
+            SELECT 
+                ct.assignments_count, 
+                ct.quizzes_count, 
+                cpt.completed_assignments, 
+                cpt.completed_quizzes
+            FROM course_totals ct CROSS JOIN completed_totals cpt
+        `, [courseId]);
+
+        let cohortProgress = 0;
+        if (enrolledStudents > 0) {
+            const data = progressRes.rows[0];
+            const totalPossibleTasks = enrolledStudents * (parseInt(data.assignments_count) + parseInt(data.quizzes_count));
+            const totalCompletedTasks = parseInt(data.completed_assignments) + parseInt(data.completed_quizzes);
+            
+            if (totalPossibleTasks > 0) {
+                cohortProgress = Math.round((totalCompletedTasks / totalPossibleTasks) * 100);
+            }
+        }
+
+        res.json({
+            enrolledStudents,
+            pendingReviews,
+            cohortProgress 
+        });
+    } catch (error) {
+        console.error('Помилка аналітики:', error);
+        res.status(500).json({ error: 'Помилка при формуванні аналітики' });
+    }
+});
+
 module.exports = router;
