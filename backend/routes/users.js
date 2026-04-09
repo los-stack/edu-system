@@ -137,4 +137,43 @@ router.put('/password', authMiddleware, async (req, res) => {
     }
 });
 
+router.get('/my-progress', authMiddleware, async (req, res) => {
+    try {
+        const studentId = req.user.id;
+        
+        const query = `
+            WITH course_tasks AS (
+                SELECT
+                    c.id AS course_id,
+                    (SELECT COUNT(*) FROM assignments WHERE course_id = c.id) AS total_assignments,
+                    (SELECT COUNT(*) FROM quizzes WHERE course_id = c.id) AS total_quizzes
+                FROM courses c
+                JOIN enrollments e ON c.id = e.course_id
+                WHERE e.student_id = $1
+            ),
+            student_completed AS (
+                SELECT
+                    c.id AS course_id,
+                    (SELECT COUNT(DISTINCT assignment_id) FROM submissions s JOIN assignments a ON s.assignment_id = a.id WHERE a.course_id = c.id AND s.student_id = $1) AS completed_assignments,
+                    (SELECT COUNT(DISTINCT quiz_id) FROM quiz_results qr JOIN quizzes q ON qr.quiz_id = q.id WHERE q.course_id = c.id AND qr.student_id = $1) AS completed_quizzes
+                FROM courses c
+                JOIN enrollments e ON c.id = e.course_id
+                WHERE e.student_id = $1
+            )
+            SELECT
+                ct.course_id,
+                (ct.total_assignments + ct.total_quizzes) AS total_tasks,
+                (sc.completed_assignments + sc.completed_quizzes) AS completed_tasks
+            FROM course_tasks ct
+            JOIN student_completed sc ON ct.course_id = sc.course_id;
+        `;
+        
+        const result = await db.query(query, [studentId]);
+        res.json(result.rows);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ error: 'Помилка при отриманні прогресу' });
+    }
+});
+
 module.exports = router;

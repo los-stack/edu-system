@@ -14,6 +14,7 @@ function Dashboard() {
     const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
     const [newCourseTitle, setNewCourseTitle] = useState('');
     const [newCourseDesc, setNewCourseDesc] = useState('');
+    const [progressMap, setProgressMap] = useState({});
 
     useEffect(() => {
         const fetchData = async () => {
@@ -34,11 +35,21 @@ function Dashboard() {
 
                     const enrollmentsRes = await axios.get('/api/users/my-enrollments');
                     setEnrolledCourseIds(enrollmentsRes.data);
+
+                    const progressRes = await axios.get('/api/users/my-progress');
+                    const pMap = {};
+                    progressRes.data.forEach(p => {
+                        pMap[p.course_id] = {
+                            total: parseInt(p.total_tasks),
+                            completed: parseInt(p.completed_tasks)
+                        };
+                    });
+                    setProgressMap(pMap);
                 }
-            } catch (err) {
-                console.error(err);
+            } catch (error) {
+                console.error('Помилка завантаження Dashboard:', error);
                 setError('Не вдалося завантажити дані.');
-                if (err.response && err.response.status === 401) {
+                if (error.response && error.response.status === 401) {
                     localStorage.removeItem('user');
                     navigate('/');
                 }
@@ -51,10 +62,10 @@ function Dashboard() {
         try {
             await axios.post('/api/auth/logout');
             localStorage.removeItem('user');
-            window.dispatchEvent(new Event('user-updated')); 
+            window.dispatchEvent(new Event('user-updated'));
             navigate('/');
-        } catch (err) {
-            console.error('Помилка при виході:', err);
+        } catch (error) {
+            console.error('Помилка при виході:', error);
         }
     };
 
@@ -68,8 +79,8 @@ function Dashboard() {
             setNewCourseDesc('');
             setIsCourseModalOpen(false);
             toast.success('Курс успішно створено!');
-        } catch (err) {
-            console.error('Помилка:', err);
+        } catch (error) {
+            console.error('Помилка при створенні курсу:', error);
             toast.error('Помилка при створенні курсу');
         }
     };
@@ -79,8 +90,9 @@ function Dashboard() {
             const response = await axios.post(`/api/courses/${courseId}/enroll`, {});
             setEnrolledCourseIds(prev => [...prev, courseId]);
             toast.success(response.data.message);
-        } catch (err) {
-            toast.error(err.response?.data?.error || 'Помилка при записі на курс');
+        } catch (error) {
+            console.error('Помилка при записі на курс:', error);
+            toast.error(error.response?.data?.error || 'Помилка при записі на курс');
         }
     };
 
@@ -166,6 +178,12 @@ function Dashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {courses.map((course) => {
                         const isEnrolled = enrolledCourseIds.includes(course.id);
+                        const courseProgress = progressMap[course.id];
+                        const showProgress = user.role === 'student' && isEnrolled && courseProgress;
+                        const progressPercentage = showProgress && courseProgress.total > 0 
+                            ? Math.round((courseProgress.completed / courseProgress.total) * 100) 
+                            : 0;
+
                         return (
                             <div key={course.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex flex-col h-full hover:shadow-md dark:hover:shadow-gray-900 transition-shadow group">
                                 <div className="grow mb-6">
@@ -176,18 +194,39 @@ function Dashboard() {
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1.5">
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg> Викладач: <span className="font-medium text-gray-700 dark:text-gray-300">{course.teacher_name}</span>
                                     </p>
+                                    
                                     <div className="flex flex-wrap gap-2">
                                         <Link to={`/course/${course.id}`} className="flex-1 text-center px-4 py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Відкрити</Link>
+                                        
                                         {user.role === 'student' && (
-                                            isEnrolled ? (
-                                                <span className="flex-1 flex justify-center items-center gap-1 px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm font-bold border border-green-200 dark:border-green-800/30 cursor-default">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Ви записані
-                                                </span>
-                                            ) : (
-                                                <button onClick={() => handleEnroll(course.id)} className="flex-1 text-center px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">Записатися</button>
-                                            )
+                                            <>
+                                                {isEnrolled ? (
+                                                    <span className="flex-1 flex justify-center items-center gap-1 px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm font-bold border border-green-200 dark:border-green-800/30 cursor-default">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Ви записані
+                                                    </span>
+                                                ) : (
+                                                    <button onClick={() => handleEnroll(course.id)} className="flex-1 text-center px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">Записатися</button>
+                                                )}
+                                            </>
                                         )}
                                     </div>
+
+                                    {showProgress && (
+                                        <div className="mt-5 pt-4 border-t border-dashed border-gray-200 dark:border-gray-700">
+                                            <div className="flex justify-between text-xs mb-1.5">
+                                                <span className="font-medium text-gray-500 dark:text-gray-400">Прогрес курсу</span>
+                                                <span className="font-bold text-blue-600 dark:text-blue-400">
+                                                    {courseProgress.completed} з {courseProgress.total} завдань
+                                                </span>
+                                            </div>
+                                            <div className="w-full bg-gray-100 dark:bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-200 dark:border-gray-800">
+                                                <div 
+                                                    className="bg-blue-600 h-2 rounded-full transition-all duration-1000 ease-out" 
+                                                    style={{ width: `${progressPercentage}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         );

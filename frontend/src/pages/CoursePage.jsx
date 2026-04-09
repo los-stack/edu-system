@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import toast from 'react-hot-toast'; 
+import toast from 'react-hot-toast';
 import CreateAssignmentModal from '../components/CreateAssignmentModal'; 
 import CommentSection from '../components/CommentSection';             
 import CreateQuizModal from '../components/CreateQuizModal';
@@ -51,8 +51,8 @@ function CoursePage() {
                     const myResultsRes = await axios.get(`/api/quizzes/my-results/${id}`);
                     setMyQuizResults(myResultsRes.data);
                 }
-            } catch (err) {
-                console.error(err);
+            } catch (error) {
+                console.error('Помилка завантаження курсу:', error);
                 setError('Не вдалося завантажити дані курсу.');
             }
         };
@@ -70,10 +70,10 @@ function CoursePage() {
             });
             setAssignments([...assignments, response.data.assignment]);
             setIsAssignmentModalOpen(false);
-            toast.success('Завдання додано!'); 
-        } catch (err) {
-            console.error('Помилка:', err);
-            toast.error('Помилка при створенні завдання'); 
+            toast.success('Завдання додано!');
+        } catch (error) {
+            console.error('Помилка створення завдання:', error);
+            toast.error('Помилка при створенні завдання');
         }
     };
 
@@ -83,10 +83,10 @@ function CoursePage() {
             const quizzesRes = await axios.get(`/api/quizzes/course/${id}`);
             setQuizzes(quizzesRes.data);
             setIsQuizModalOpen(false);
-            toast.success('Тест створено!'); 
-        } catch (err) {
-            console.error('Помилка:', err);
-            toast.error('Помилка при створенні тесту'); 
+            toast.success('Тест створено!');
+        } catch (error) {
+            console.error('Помилка створення тесту:', error);
+            toast.error('Помилка при створенні тесту');
         }
     };
 
@@ -95,7 +95,7 @@ function CoursePage() {
         try {
             const fileInput = document.getElementById(`studentFile-${assignmentId}`);
             const file = fileInput.files[0];
-            if (!file) return toast.error('Оберіть файл для завантаження!'); 
+            if (!file) return toast.error('Оберіть файл для завантаження!');
 
             const formData = new FormData();
             formData.append('file', file);
@@ -110,9 +110,9 @@ function CoursePage() {
                 return [...filtered, { assignment_id: assignmentId, student_id: user.id, file_url: res.data.submission.file_url, student_name: user.name }];
             });
             fileInput.value = ''; 
-        } catch (err) {
-            console.error('Помилка:', err);
-            toast.error('Помилка при відправці роботи'); 
+        } catch (error) {
+            console.error('Помилка відправки роботи:', error);
+            toast.error('Помилка при відправці роботи');
         }
     };
 
@@ -135,9 +135,9 @@ function CoursePage() {
             ));
             
             e.target.reset(); 
-        } catch (err) {
-            console.error('Помилка:', err);
-            toast.error('Помилка при виставленні оцінки'); 
+        } catch (error) {
+            console.error('Помилка виставлення оцінки:', error);
+            toast.error('Помилка при виставленні оцінки');
         }
     };
 
@@ -145,14 +145,25 @@ function CoursePage() {
         try {
             const res = await axios.post(`/api/assignments/${assignmentId}/comments`, { text: text });
             setComments([...comments, res.data.comment]);
-        } catch (err) {
-            console.error('Помилка:', err);
-            toast.error('Помилка при відправці коментаря'); 
+        } catch (error) {
+            console.error('Помилка відправки коментаря:', error);
+            toast.error('Помилка при відправці коментаря');
         }
     };
 
     if (error) return <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-center mt-10 max-w-2xl mx-auto border border-red-200 dark:border-red-800/30">{error}</div>;
     if (!course || !user) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
+
+    let totalTasks = 0;
+    let completedTasks = 0;
+    let progressPercentage = 0;
+
+    if (user.role === 'student') {
+        totalTasks = assignments.length + quizzes.length;
+        const mySubmissionsCount = assignments.filter(a => submissions.some(s => s.assignment_id === a.id && s.student_id === user.id)).length;
+        completedTasks = mySubmissionsCount + myQuizResults.length;
+        progressPercentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+    }
 
     return (
         <div className="max-w-4xl mx-auto pb-12 relative">
@@ -163,6 +174,23 @@ function CoursePage() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-8 transition-colors">
                 <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">{course.title}</h1>
                 <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">{course.description}</p>
+                
+                {user.role === 'student' && (
+                    <div className="mt-6 bg-gray-50 dark:bg-gray-900/50 p-5 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <div className="flex justify-between items-end mb-2.5">
+                            <div>
+                                <p className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Мій прогрес</p>
+                                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">Виконано {completedTasks} з {totalTasks} завдань</p>
+                            </div>
+                            <span className="text-2xl font-black text-blue-600 dark:text-blue-400">{progressPercentage}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700/50 rounded-full h-3 overflow-hidden shadow-inner">
+                            <div className="bg-blue-600 h-3 rounded-full transition-all duration-1000 ease-out relative overflow-hidden" style={{ width: `${progressPercentage}%` }}>
+                                <div className="absolute top-0 left-0 bottom-0 right-0 bg-white/20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)' }}></div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
