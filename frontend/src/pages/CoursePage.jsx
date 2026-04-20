@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -6,7 +6,6 @@ import CreateAssignmentModal from '../components/CreateAssignmentModal';
 import CommentSection from '../components/CommentSection';             
 import CreateQuizModal from '../components/CreateQuizModal';
 import QuizResultsModal from '../components/QuizResultsModal';
-
 
 function CoursePage() {
     const { id } = useParams(); 
@@ -19,15 +18,14 @@ function CoursePage() {
     const [comments, setComments] = useState([]);
     const [quizzes, setQuizzes] = useState([]); 
     const [myQuizResults, setMyQuizResults] = useState([]); 
+    const [courseStudents, setCourseStudents] = useState([]); 
     const [analytics, setAnalytics] = useState(null); 
     const [error, setError] = useState('');
 
+    const [activeTab, setActiveTab] = useState('content');
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
     const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
     const [selectedQuizForResults, setSelectedQuizForResults] = useState(null);
-    const closeAssignmentModal = useCallback(() => setIsAssignmentModalOpen(false), []);
-    const closeQuizModal = useCallback(() => setIsQuizModalOpen(false), []);
-    const closeQuizResultsModal = useCallback(() => setSelectedQuizForResults(null), []);
     const [openComments, setOpenComments] = useState([]);
 
     useEffect(() => {
@@ -37,12 +35,13 @@ function CoursePage() {
                 const currentUser = profileRes.data;
                 setUser(currentUser);
 
-                const [courseRes, assignmentsRes, subRes, commentsRes, quizzesRes] = await Promise.all([
+                const [courseRes, assignmentsRes, subRes, commentsRes, quizzesRes, studentsRes] = await Promise.all([
                     axios.get(`/api/courses/${id}`),
                     axios.get(`/api/courses/${id}/assignments`),
                     axios.get(`/api/courses/${id}/submissions`),
                     axios.get(`/api/courses/${id}/comments`),
-                    axios.get(`/api/quizzes/course/${id}`)
+                    axios.get(`/api/quizzes/course/${id}`),
+                    axios.get(`/api/courses/${id}/students`) 
                 ]);
 
                 setCourse(courseRes.data);
@@ -50,6 +49,7 @@ function CoursePage() {
                 setSubmissions(Array.isArray(subRes.data) ? subRes.data : []);
                 setComments(Array.isArray(commentsRes.data) ? commentsRes.data : []);
                 setQuizzes(Array.isArray(quizzesRes.data) ? quizzesRes.data : []);
+                setCourseStudents(Array.isArray(studentsRes.data) ? studentsRes.data : []);
 
                 if (currentUser.role === 'student') {
                     const myResultsRes = await axios.get(`/api/quizzes/my-results/${id}`);
@@ -59,9 +59,9 @@ function CoursePage() {
                     setAnalytics(analyticsRes.data);
                 }
 
-            } catch (error) {
-                console.error('Помилка завантаження курсу:', error);
-                setError('Не вдалося завантажити дані курсу.');
+            } catch (fetchError) {
+                console.error('Помилка завантаження курсу:', fetchError);
+                setError('Не вдалося завантажити дані курсу. Можливо, ви не авторизовані.');
             }
         };
         fetchCourseData();
@@ -87,12 +87,9 @@ function CoursePage() {
 
     const myQuizResultsMap = useMemo(() => {
         const map = {};
-        myQuizResults.forEach(r => {
-            map[r.quiz_id] = r;
-        });
+        myQuizResults.forEach(r => { map[r.quiz_id] = r; });
         return map;
     }, [myQuizResults]);
-
 
     const toggleComments = (assignmentId) => {
         setOpenComments(prev => prev.includes(assignmentId) ? prev.filter(aId => aId !== assignmentId) : [...prev, assignmentId]);
@@ -104,11 +101,11 @@ function CoursePage() {
                 headers: { 'Content-Type': 'multipart/form-data' } 
             });
             const assignmentsRes = await axios.get(`/api/courses/${id}/assignments`);
-            setAssignments(Array.isArray(assignmentsRes.data) ? assignmentsRes.data : []);
+            setAssignments(assignmentsRes.data);
             setIsAssignmentModalOpen(false);
             toast.success('Завдання додано!');
-        } catch (error) {
-            console.error('Помилка створення завдання:', error);
+        } catch (createErr) {
+            console.error(createErr);
             toast.error('Помилка при створенні завдання');
         }
     };
@@ -117,11 +114,11 @@ function CoursePage() {
         try {
             await axios.post(`/api/quizzes/course/${id}`, quizData);
             const quizzesRes = await axios.get(`/api/quizzes/course/${id}`);
-            setQuizzes(Array.isArray(quizzesRes.data) ? quizzesRes.data : []);
+            setQuizzes(quizzesRes.data);
             setIsQuizModalOpen(false);
             toast.success('Тест створено!');
-        } catch (error) {
-            console.error('Помилка створення тесту:', error);
+        } catch (quizErr) {
+            console.error(quizErr);
             toast.error('Помилка при створенні тесту');
         }
     };
@@ -131,25 +128,21 @@ function CoursePage() {
         try {
             const fileInput = document.getElementById(`studentFile-${assignmentId}`);
             const file = fileInput.files[0];
-            if (!file) return toast.error('Оберіть файл для завантаження!');
+            if (!file) return toast.error('Оберіть файл!');
 
             const formData = new FormData();
             formData.append('file', file);
 
-            const res = await axios.post(`/api/assignments/${assignmentId}/submit`, formData, {
+            await axios.post(`/api/assignments/${assignmentId}/submit`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            const subData = res.data?.submission || res.data;
-
             toast.success('Роботу успішно завантажено!');
-            setSubmissions(prev => {
-                const filtered = prev.filter(s => !(s.assignment_id === assignmentId && s.student_id === user.id));
-                return [...filtered, { assignment_id: assignmentId, student_id: user.id, file_url: subData.file_url, student_name: user.name }];
-            });
+            const subRes = await axios.get(`/api/courses/${id}/submissions`);
+            setSubmissions(subRes.data);
             fileInput.value = ''; 
-        } catch (error) {
-            console.error('Помилка відправки роботи:', error);
+        } catch (submitErr) {
+            console.error(submitErr);
             toast.error('Помилка при відправці роботи');
         }
     };
@@ -163,328 +156,239 @@ function CoursePage() {
             await axios.post(`/api/assignments/${assignmentId}/grade`, {
                 student_id: studentId, score: Number(scoreVal), feedback: feedbackVal
             });
-
-            toast.success('Оцінку успішно виставлено!');
-            
-            setSubmissions(prev => prev.map(sub => 
-                (sub.assignment_id === assignmentId && sub.student_id === studentId) 
-                    ? { ...sub, score: Number(scoreVal), feedback: feedbackVal } 
-                    : sub
-            ));
-            
-            if (analytics && analytics.pendingReviews > 0) {
-                setAnalytics(prev => ({ ...prev, pendingReviews: prev.pendingReviews - 1 }));
-            }
-            
+            toast.success('Оцінку виставлено!');
+            const subRes = await axios.get(`/api/courses/${id}/submissions`);
+            setSubmissions(subRes.data);
             e.target.reset(); 
-        } catch (error) {
-            console.error('Помилка виставлення оцінки:', error);
+        } catch (gradeErr) {
+            console.error(gradeErr);
             toast.error('Помилка при виставленні оцінки');
         }
     };
 
     const handleCommentSubmit = async (assignmentId, text) => {
         try {
-            const res = await axios.post(`/api/assignments/${assignmentId}/comments`, { text: text });
-            setComments([...comments, res.data?.comment || res.data]);
-        } catch (error) {
-            console.error('Помилка відправки коментаря:', error);
-            toast.error('Помилка при відправці коментаря');
+            const commentRes = await axios.post(`/api/assignments/${assignmentId}/comments`, { text: text });
+            setComments([...comments, commentRes.data.comment]);
+        } catch (commentErr) {
+            console.error(commentErr);
+            toast.error('Помилка відправки коментаря');
         }
     };
 
-    if (error) return <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-center mt-10 max-w-2xl mx-auto border border-red-200 dark:border-red-800/30">{error}</div>;
-    if (!course || !user) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
+    if (error) return <div className="p-8 text-center text-red-500 font-medium">{error}</div>;
+    if (!course || !user) return <div className="flex justify-center items-center h-96"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div></div>;
 
-    let totalTasks = 0;
-    let completedTasks = 0;
     let progressPercentage = 0;
-
     if (user.role === 'student') {
-        totalTasks = assignments.length + quizzes.length;
-        const mySubmissionsCount = assignments.filter(a => submissionsMap[a.id]?.some(s => s.student_id === user.id)).length;
-        completedTasks = mySubmissionsCount + myQuizResults.length;
-        progressPercentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+        const total = assignments.length + quizzes.length;
+        const completed = assignments.filter(a => submissionsMap[a.id]?.some(s => s.student_id === user.id)).length + myQuizResults.length;
+        progressPercentage = total === 0 ? 0 : Math.round((completed / total) * 100);
     }
 
     return (
-        <div className="max-w-4xl mx-auto pb-12 relative">
-            <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 mb-6 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Назад до панелі
-            </Link>
+        <div className="max-w-7xl mx-auto pb-20 px-4 sm:px-6 lg:px-8 mt-4">
             
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-8 transition-colors">
-                <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">{course.title}</h1>
-                <div className="prose prose-lg dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 wrap-break-word w-full overflow-hidden" dangerouslySetInnerHTML={{ __html: typeof course.description === 'string' ? course.description : '' }}></div>
+            <div className="relative bg-white dark:bg-[#0f172a] rounded-[2.5rem] p-8 sm:p-12 mb-10 border border-gray-100 dark:border-gray-800/80 shadow-sm overflow-hidden">
+                <div className="absolute top-0 right-0 w-150 h-150 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
                 
-                {user.role === 'student' && (
-                    <div className="mt-6 bg-gray-50 dark:bg-gray-900/50 p-5 rounded-xl border border-gray-100 dark:border-gray-700">
-                        <div className="flex justify-between items-end mb-2.5">
-                            <div>
-                                <p className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Мій прогрес</p>
-                                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">Виконано {completedTasks} з {totalTasks} завдань</p>
-                            </div>
-                            <span className="text-2xl font-black text-blue-600 dark:text-blue-400">{progressPercentage}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700/50 rounded-full h-3 overflow-hidden shadow-inner">
-                            <div className="bg-blue-600 h-3 rounded-full transition-all duration-1000 ease-out relative overflow-hidden" style={{ width: `${progressPercentage}%` }}>
-                                <div className="absolute top-0 left-0 bottom-0 right-0 bg-white/20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)' }}></div>
-                            </div>
-                        </div>
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+                    <div className="max-w-2xl">
+                        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 dark:text-blue-400 mb-6 hover:gap-3 transition-all">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                            НАЗАД ДО ПАНЕЛІ
+                        </Link>
+                        <h1 className="text-3xl sm:text-5xl font-black text-gray-900 dark:text-white tracking-tight mb-4">{course.title}</h1>
+                        <div className="prose prose-lg dark:prose-invert text-gray-500 dark:text-gray-400 max-w-none line-clamp-2" dangerouslySetInnerHTML={{ __html: course.description }}></div>
                     </div>
-                )}
 
-                {user.role === 'teacher' && analytics && (
-                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-5">
-                        <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition-colors shadow-sm hover:shadow-md">
-                            <div className="flex items-center justify-between mb-3">
-                                <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Студентів</p>
-                                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/30">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                                </div>
+                    {user.role === 'student' && (
+                        <div className="w-full md:w-64 bg-gray-50 dark:bg-gray-800/40 p-6 rounded-3xl border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm">
+                            <div className="flex justify-between items-end mb-3">
+                                <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Прогрес</span>
+                                <span className="text-xl font-black text-blue-600 dark:text-blue-400">{progressPercentage}%</span>
                             </div>
-                            <div className="flex items-baseline gap-2">
-                                <p className="text-4xl font-black text-gray-900 dark:text-white leading-none">{analytics.enrolledStudents}</p>
-                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">записано на курс</p>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                                <div className="bg-blue-600 h-2 rounded-full transition-all duration-1000" style={{ width: `${progressPercentage}%` }}></div>
                             </div>
                         </div>
-                        
-                        <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition-colors shadow-sm hover:shadow-md">
-                            <div className="flex items-center justify-between mb-3">
-                                <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Прогрес групи</p>
-                                <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800/30">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                                </div>
-                            </div>
-                            <div className="flex items-baseline gap-1 mb-2">
-                                <p className="text-4xl font-black text-gray-900 dark:text-white leading-none">{analytics.cohortProgress}%</p>
-                            </div>
-                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                                <div 
-                                    className="bg-green-500 h-2 rounded-full transition-all duration-1000 ease-out" 
-                                    style={{ width: `${analytics.cohortProgress}%` }}
-                                ></div>
-                            </div>
-                        </div>
-
-                        <div className={`p-6 rounded-2xl border flex flex-col justify-center transition-colors shadow-sm hover:shadow-md ${analytics.pendingReviews > 0 ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/30' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-700'}`}>
-                            <div className="flex items-center justify-between mb-3">
-                                <p className={`text-sm font-bold uppercase tracking-wider ${analytics.pendingReviews > 0 ? 'text-amber-700 dark:text-amber-500' : 'text-gray-500 dark:text-gray-400'}`}>На перевірку</p>
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center border ${analytics.pendingReviews > 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/30' : 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700'}`}>
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                </div>
-                            </div>
-                            <div className="flex items-baseline gap-2">
-                                <p className={`text-4xl font-black leading-none ${analytics.pendingReviews > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-gray-900 dark:text-white'}`}>{analytics.pendingReviews}</p>
-                                <p className={`text-sm font-medium ${analytics.pendingReviews > 0 ? 'text-amber-600 dark:text-amber-500' : 'text-gray-500 dark:text-gray-400'}`}>нових робіт</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
-            <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
-                <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <svg className="w-6 h-6 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg> Тести курсу
-                    </h2>
-                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">{quizzes.length}</span>
-                </div>
+            <div className="flex items-center gap-1 p-1.5 bg-white dark:bg-[#0f172a] border border-gray-100 dark:border-gray-800 rounded-2xl mb-10 w-fit mx-auto sm:mx-0">
+                <button 
+                    onClick={() => setActiveTab('content')}
+                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'content' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}
+                >
+                    Навчання
+                </button>
                 {user.role === 'teacher' && (
-                    <button onClick={() => setIsQuizModalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg> Створити тест
+                    <button 
+                        onClick={() => setActiveTab('submissions')}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'submissions' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}
+                    >
+                        Перевірка робіт
+                        {analytics?.pendingReviews > 0 && <span className="ml-2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{analytics.pendingReviews}</span>}
                     </button>
                 )}
+                <button 
+                    onClick={() => setActiveTab('students')}
+                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'students' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}
+                >
+                    Учасники {courseStudents.length > 0 && <span className="opacity-60 ml-1">({courseStudents.length})</span>}
+                </button>
             </div>
 
-            <div className="space-y-4 mb-12">
-                {quizzes.length === 0 ? (
-                    <div className="text-center py-8 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-                        <p className="text-gray-500 dark:text-gray-400">Тестів поки немає.</p>
-                    </div>
-                ) : quizzes?.map((quiz, index) => {
-                    if (!quiz) return null;
-                    const myResult = myQuizResultsMap[quiz.id];
-                    return (
-                        <div key={quiz.id || index} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:shadow-md transition-shadow">
-                            <div className="flex-1">
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{quiz.title}</h3>
-                                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{quiz.description}</p>
-                                <div className="flex items-center gap-3">
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 text-blue-800 dark:text-blue-300 text-xs font-bold uppercase tracking-wider">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg> Тест
-                                    </span>
-                                    <span className="text-xs font-medium text-gray-400 dark:text-gray-500">
-                                        Створено: {new Date(quiz.created_at).toLocaleDateString('uk-UA')}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="w-full sm:w-auto mt-2 sm:mt-0">
-                                {user.role === 'student' ? (
-                                    myResult ? (
-                                        <span className="flex items-center justify-center gap-2 px-6 py-2.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 font-bold rounded-lg border border-green-200 dark:border-green-800/30 w-full sm:w-auto">
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                                            Оцінка: {myResult.score} / 100
-                                        </span>
-                                    ) : (
-                                        <Link to={`/quiz/${quiz.id}`} className="block text-center px-6 py-2.5 bg-gray-900 dark:bg-blue-600 text-white font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap w-full sm:w-auto">
-                                            Пройти тест
-                                        </Link>
-                                    )
-                                ) : (
-                                    <button onClick={() => setSelectedQuizForResults(quiz)} className="w-full sm:w-auto px-6 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm whitespace-nowrap">
-                                        Результати
+            <div className="space-y-12">
+                {activeTab === 'content' && (
+                    <div className="grid grid-cols-1 gap-12">
+                        <section>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Тести</h2>
+                                {user.role === 'teacher' && (
+                                    <button onClick={() => setIsQuizModalOpen(true)} className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
                                     </button>
                                 )}
                             </div>
-                        </div>
-                    );
-                })}
-            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {quizzes.map(quiz => {
+                                    const myResult = myQuizResultsMap[quiz.id];
+                                    return (
+                                        <div key={quiz.id} className="p-6 bg-white dark:bg-[#0f172a] border border-gray-100 dark:border-gray-800/80 rounded-3xl flex justify-between items-center group hover:border-blue-500/30 transition-all shadow-sm">
+                                            <div>
+                                                <h3 className="font-bold text-gray-900 dark:text-white mb-1">{quiz.title}</h3>
+                                                <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Тест • {new Date(quiz.created_at).toLocaleDateString()}</p>
+                                            </div>
+                                            {user.role === 'student' ? (
+                                                myResult ? (
+                                                    <div className="text-right">
+                                                        <span className="text-lg font-black text-green-600 dark:text-green-400">{myResult.score}%</span>
+                                                        <p className="text-[10px] font-bold text-gray-400">ПРОЙДЕНО</p>
+                                                    </div>
+                                                ) : (
+                                                    <Link to={`/quiz/${quiz.id}`} className="px-5 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-black rounded-xl hover:scale-105 transition-all">ПРОЙТИ</Link>
+                                                )
+                                            ) : (
+                                                <button onClick={() => setSelectedQuizForResults(quiz)} className="p-2 text-gray-400 hover:text-blue-500 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></button>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </section>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
-                <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Завдання курсу</h2>
-                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">{assignments.length}</span>
-                </div>
-                {user.role === 'teacher' && (
-                    <button onClick={() => setIsAssignmentModalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-white transition-colors shadow-sm">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg> Додати завдання
-                    </button>
+                        <section>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Завдання та лекції</h2>
+                                {user.role === 'teacher' && (
+                                    <button onClick={() => setIsAssignmentModalOpen(true)} className="p-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:opacity-80 transition-all shadow-lg">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                    </button>
+                                )}
+                            </div>
+                            <div className="space-y-6">
+                                {assignments.map(assignment => {
+                                    const mySub = submissionsMap[assignment.id]?.find(s => s.student_id === user.id);
+                                    return (
+                                        <div key={assignment.id} className="bg-white dark:bg-[#0f172a] border border-gray-100 dark:border-gray-800/80 rounded-4xl overflow-hidden shadow-sm">
+                                            <div className="p-8">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{assignment.title}</h3>
+                                                    <span className="px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black rounded-lg border border-amber-100 dark:border-amber-500/20 uppercase tracking-widest">Дедлайн: {new Date(assignment.due_date).toLocaleDateString()}</span>
+                                                </div>
+                                                <div className="prose dark:prose-invert max-w-none text-gray-500 dark:text-gray-400 mb-8" dangerouslySetInnerHTML={{ __html: assignment.description }}></div>
+                                                
+                                                {user.role === 'student' && (
+                                                    <div className="p-6 bg-gray-50 dark:bg-gray-800/40 rounded-3xl border border-gray-100 dark:border-gray-700/50">
+                                                        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${mySub ? 'bg-green-100 text-green-600 dark:bg-green-500/20' : 'bg-gray-200 text-gray-400 dark:bg-gray-700'}`}>
+                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-bold text-gray-900 dark:text-white">{mySub ? 'Роботу здано' : 'Роботу не здано'}</p>
+                                                                    {mySub?.score !== null && mySub?.score !== undefined && <p className="text-xs font-bold text-green-600">Оцінка: {mySub.score}/100</p>}
+                                                                </div>
+                                                            </div>
+                                                            <form onSubmit={(e) => handleStudentSubmit(e, assignment.id)} className="flex gap-2 w-full sm:w-auto">
+                                                                <input type="file" id={`studentFile-${assignment.id}`} className="hidden" onChange={(e) => {if(e.target.files[0]) toast.success(`Файл обрано: ${e.target.files[0].name}`)}} />
+                                                                <label htmlFor={`studentFile-${assignment.id}`} className="cursor-pointer px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs font-bold rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-all">ОБРАТИ ФАЙЛ</label>
+                                                                <button type="submit" className="px-4 py-2 bg-blue-600 text-white text-xs font-black rounded-xl hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition-all">ВІДПРАВИТИ</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <CommentSection assignmentId={assignment.id} comments={commentsMap[assignment.id] || []} currentUser={user} isOpen={openComments.includes(assignment.id)} onToggle={toggleComments} onCommentSubmit={handleCommentSubmit} />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </section>
+                    </div>
+                )}
+
+                {activeTab === 'submissions' && user.role === 'teacher' && (
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Роботи студентів</h2>
+                        {submissions.length === 0 ? (
+                            <div className="text-center py-20 bg-white dark:bg-[#0f172a] rounded-[2.5rem] border border-dashed border-gray-200 dark:border-gray-800/80 text-gray-400 font-medium">Зданих робіт поки немає.</div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4">
+                                {submissions.map(sub => (
+                                    <div key={`${sub.assignment_id}-${sub.student_id}`} className="p-6 bg-white dark:bg-[#0f172a] border border-gray-100 dark:border-gray-800/80 rounded-3xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 shadow-sm">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-full bg-linear-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-500/20">{sub.student_name.charAt(0)}</div>
+                                            <div>
+                                                <h4 className="font-bold text-gray-900 dark:text-white">{sub.student_name}</h4>
+                                                <a href={`${import.meta.env.VITE_API_URL}${sub.file_url}`} target="_blank" rel="noreferrer" className="text-xs font-bold text-blue-500 hover:text-blue-400 transition-colors">ЗАВАНТАЖИТИ ФАЙЛ</a>
+                                            </div>
+                                        </div>
+                                        {sub.score !== null ? (
+                                            <div className="px-6 py-2 bg-green-50 dark:bg-green-500/10 border border-green-100 dark:border-green-500/20 rounded-2xl text-green-600 font-black text-sm">ОЦІНЕНО: {sub.score}/100</div>
+                                        ) : (
+                                            <form onSubmit={(e) => handleGradeSubmit(e, sub.assignment_id, sub.student_id)} className="flex items-center gap-2 w-full lg:w-auto">
+                                                <input type="number" name="scoreInput" placeholder="Бал" className="w-20 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                                                <input type="text" name="feedbackInput" placeholder="Відгук..." className="flex-1 lg:w-64 px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                                <button type="submit" className="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-black rounded-xl hover:opacity-80 transition-all shadow-sm">ОЦІНИТИ</button>
+                                            </form>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'students' && (
+                    <div className="bg-white dark:bg-[#0f172a] border border-gray-100 dark:border-gray-800/80 rounded-[2.5rem] p-8 shadow-sm">
+                        <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-8">Студенти курсу</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {courseStudents.length > 0 ? (
+                                courseStudents.map(s => (
+                                    <div key={s.id} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
+                                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center font-bold text-blue-600 dark:text-blue-400">
+                                            {s.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <span className="block font-bold text-gray-900 dark:text-gray-200">{s.name}</span>
+                                            {user.role === 'teacher' && <span className="text-xs text-gray-500">{s.email}</span>}
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-gray-500 text-sm font-medium">Ще ніхто не записався на цей курс.</p>
+                            )}
+                        </div>
+                    </div>
                 )}
             </div>
 
-            <div className="space-y-8">
-                {assignments.length === 0 ? (
-                    <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-                        <p className="text-gray-500 dark:text-gray-400">Завдань ще немає.</p>
-                    </div>
-                ) : assignments?.map((assignment, index) => {
-                    if (!assignment) return null;
-                    
-                    const assignmentSubmissions = submissionsMap[assignment.id] || [];
-                    const mySub = assignmentSubmissions.find(s => s.student_id === user.id);
-                    const assignmentComments = commentsMap[assignment.id] || [];
-                    const isCommentsOpen = openComments.includes(assignment.id);
-
-                    return (
-                        <div key={assignment.id || index} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                            <div className="p-6 sm:p-8">
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{assignment.title}</h3>
-                                <div className="prose dark:prose-invert max-w-none mb-6 text-gray-600 dark:text-gray-300 wrap-break-word w-full overflow-hidden" dangerouslySetInnerHTML={{ __html: typeof assignment.description === 'string' ? assignment.description : '' }}></div>
-                                
-                                <div className="flex flex-wrap items-center gap-4 mb-2">
-                                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 text-amber-800 dark:text-amber-400 text-sm font-medium">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        Дедлайн: {new Date(assignment.due_date).toLocaleDateString('uk-UA')}
-                                    </div>
-                                    {assignment.file_url && (
-                                        <a href={`${import.meta.env.VITE_API_URL}${assignment.file_url}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
-                                            Матеріали викладача
-                                        </a>
-                                    )}
-                                </div>
-                            </div>
-
-                            {user.role === 'student' && (
-                                <div className="bg-gray-50 dark:bg-gray-900/50 px-6 py-5 border-t border-gray-100 dark:border-gray-700">
-                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 uppercase tracking-wider">Моя відповідь</h4>
-                                    {mySub ? (
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <span className="flex items-center gap-1.5 text-sm font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded-full border border-green-200 dark:border-green-800/30">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Здано
-                                            </span>
-                                            <a href={`${import.meta.env.VITE_API_URL}${mySub.file_url}`} target="_blank" rel="noreferrer" className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">Переглянути файл</a>
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-red-600 dark:text-red-400 mb-4 font-medium flex items-center gap-1.5">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Робота ще не здана
-                                        </p>
-                                    )}
-                                    <form onSubmit={(e) => handleStudentSubmit(e, assignment.id)} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                                        <input type="file" id={`studentFile-${assignment.id}`} required className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:text-sm file:font-semibold file:bg-white dark:file:bg-gray-800 file:border file:border-gray-300 dark:file:border-gray-600 file:text-gray-700 dark:file:text-gray-300 hover:file:bg-gray-50 dark:hover:file:bg-gray-700 cursor-pointer" />
-                                        <button type="submit" className="whitespace-nowrap px-5 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-white transition-colors shadow-sm">
-                                            {mySub ? 'Перездати' : 'Відправити'}
-                                        </button>
-                                    </form>
-                                </div>
-                            )}
-
-                            {user.role === 'teacher' && (
-                                <div className="bg-white dark:bg-gray-800 px-6 py-6 border-t border-gray-100 dark:border-gray-700">
-                                    <div className="flex items-center justify-between mb-5">
-                                        <h4 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                            <svg className="w-5 h-5 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                            Роботи на перевірку
-                                        </h4>
-                                        <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 py-1 px-3 rounded-full text-xs font-bold border border-blue-100 dark:border-blue-800/30">{assignmentSubmissions.length} здано</span>
-                                    </div>
-
-                                    {assignmentSubmissions.length === 0 ? (
-                                        <div className="text-center py-8 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">Поки ніхто не здав роботу.</p>
-                                        </div>
-                                    ) : (
-                                        <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm">
-                                            <ul className="divide-y divide-gray-100 dark:divide-gray-700">
-                                                {assignmentSubmissions.map(sub => (
-                                                    <li key={sub.student_id} className="p-4 sm:p-5 flex flex-col xl:flex-row gap-4 xl:items-center justify-between hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-10 h-10 shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-700 dark:text-blue-400 font-bold text-sm border border-blue-200 dark:border-blue-800/30">
-                                                                {sub.student_name.charAt(0)}
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-sm font-bold text-gray-900 dark:text-white">{sub.student_name}</p>
-                                                                <a href={`${import.meta.env.VITE_API_URL}${sub.file_url}`} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
-                                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Завантажити рішення
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        {sub.score !== undefined && sub.score !== null ? (
-                                                            <div className="flex items-center gap-3 w-full xl:w-auto mt-2 xl:mt-0 bg-green-50 dark:bg-green-900/20 px-4 py-2.5 rounded-lg border border-green-100 dark:border-green-800/30 shadow-sm">
-                                                                <svg className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                                                                <span className="text-sm font-bold text-green-800 dark:text-green-300">Оцінено: {sub.score} / 100</span>
-                                                                {sub.feedback && <span className="text-sm text-green-600 dark:text-green-400 italic hidden sm:inline border-l border-green-200 dark:border-green-800/50 pl-3 ml-1">«{sub.feedback}»</span>}
-                                                            </div>
-                                                        ) : (
-                                                            <form onSubmit={(e) => handleGradeSubmit(e, assignment.id, sub.student_id)} className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
-                                                                <input type="number" name="scoreInput" placeholder="Бал" min="0" max="100" required className="w-20 pl-3 pr-2 py-2 text-sm text-center font-semibold bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-lg focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" />
-                                                                <input type="text" name="feedbackInput" placeholder="Коментар..." className="flex-1 xl:w-48 px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-lg focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-500" />
-                                                                <button type="submit" className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm shrink-0">Оцінити</button>
-                                                            </form>
-                                                        )}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            <CommentSection 
-                                assignmentId={assignment.id} 
-                                comments={assignmentComments} 
-                                currentUser={user} 
-                                isOpen={isCommentsOpen} 
-                                onToggle={toggleComments} 
-                                onCommentSubmit={handleCommentSubmit} 
-                            />
-                        </div>
-                    );
-                })}
-            </div>
-
-            {isAssignmentModalOpen && (
-                <CreateAssignmentModal isOpen={isAssignmentModalOpen} onClose={closeAssignmentModal} onCreate={handleCreateAssignment} />
-            )}
-            {isQuizModalOpen && (
-                <CreateQuizModal isOpen={isQuizModalOpen} onClose={closeQuizModal} onCreate={handleCreateQuiz} />
-            )}
-            {selectedQuizForResults && (
-                <QuizResultsModal isOpen={!!selectedQuizForResults} onClose={closeQuizResultsModal} quiz={selectedQuizForResults} />
-            )}
+            {isAssignmentModalOpen && <CreateAssignmentModal isOpen={isAssignmentModalOpen} onClose={() => setIsAssignmentModalOpen(false)} onCreate={handleCreateAssignment} />}
+            {isQuizModalOpen && <CreateQuizModal isOpen={isQuizModalOpen} onClose={() => setIsQuizModalOpen(false)} onCreate={handleCreateQuiz} />}
+            {selectedQuizForResults && <QuizResultsModal isOpen={!!selectedQuizForResults} onClose={() => setSelectedQuizForResults(null)} quiz={selectedQuizForResults} />}
         </div>
     );
 }

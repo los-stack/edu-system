@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
@@ -12,7 +12,7 @@ function MyGrades() {
         const fetchGrades = async () => {
             try {
                 const response = await axios.get('/api/users/my-grades');
-                setGrades(response.data);
+                setGrades(Array.isArray(response.data) ? response.data : []);
             } catch (err) {
                 console.error(err);
                 setError('Не вдалося завантажити оцінки.');
@@ -30,158 +30,170 @@ function MyGrades() {
 
     const totalGrades = grades.length;
     const averageScore = totalGrades > 0 
-        ? Math.round(grades.reduce((sum, grade) => sum + grade.score, 0) / totalGrades) 
+        ? Math.round(grades.reduce((sum, grade) => sum + Number(grade.score), 0) / totalGrades) 
         : 0;
 
     let statusConfig = {
         color: 'text-green-600 dark:text-green-400',
-        bg: 'bg-green-50 dark:bg-green-900/20',
-        border: 'border-green-200 dark:border-green-800/30',
+        bg: 'bg-green-50 dark:bg-green-500/10',
+        border: 'border-green-200 dark:border-green-500/20',
         text: 'Відмінно',
-        icon: <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        icon: <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
     };
 
     if (averageScore > 0 && averageScore < 60) {
         statusConfig = {
             color: 'text-red-600 dark:text-red-400',
-            bg: 'bg-red-50 dark:bg-red-900/20',
-            border: 'border-red-200 dark:border-red-800/30',
+            bg: 'bg-red-50 dark:bg-red-500/10',
+            border: 'border-red-200 dark:border-red-500/20',
             text: 'Потребує уваги',
-            icon: <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            icon: <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
         };
     } else if (averageScore >= 60 && averageScore < 80) {
         statusConfig = {
             color: 'text-amber-600 dark:text-amber-400',
-            bg: 'bg-amber-50 dark:bg-amber-900/20',
-            border: 'border-amber-200 dark:border-amber-800/30',
+            bg: 'bg-amber-50 dark:bg-amber-500/10',
+            border: 'border-amber-200 dark:border-amber-500/20',
             text: 'Добре',
-            icon: <svg className="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            icon: <svg className="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         };
     }
 
-    if (isLoading) return (
-        <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-    );
+    const groupedGrades = useMemo(() => {
+        const map = {};
+        grades.forEach(g => {
+            const courseName = g.course_title || 'Інші курси';
+            if (!map[courseName]) map[courseName] = [];
+            map[courseName].push(g);
+        });
+        return map;
+    }, [grades]);
+
+    const getScoreStyles = (score) => {
+        const num = Number(score);
+        if (num >= 80) return { color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-500/10', border: 'border-green-200 dark:border-green-500/20' };
+        if (num >= 60) return { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10', border: 'border-amber-200 dark:border-amber-500/20' };
+        return { color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-500/10', border: 'border-red-200 dark:border-red-500/20' };
+    };
+
+    if (isLoading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div></div>;
 
     return (
-        <div className="max-w-5xl mx-auto pb-12">
+        <div className="max-w-7xl mx-auto pb-20 px-4 sm:px-6 lg:px-8 mt-4">
             
-            <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 mb-6 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                Назад до панелі
-            </Link>
-            
-            <div className="mb-8">
-                <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Мій щоденник</h1>
-                <p className="text-gray-500 dark:text-gray-400 mt-1">Детальна аналітика вашої успішності на платформі.</p>
-            </div>
+            <div className="relative bg-white dark:bg-[#0f172a] rounded-[2.5rem] p-8 sm:p-12 mb-10 border border-gray-100 dark:border-gray-800/80 shadow-sm overflow-hidden flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+                <div className="absolute top-0 right-0 w-125 h-125 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
+                
+                <div className="relative z-10 max-w-xl">
+                    <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 dark:text-blue-400 mb-6 hover:gap-3 transition-all">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        НАЗАД ДО ПАНЕЛІ
+                    </Link>
+                    <h1 className="text-3xl sm:text-5xl font-black text-gray-900 dark:text-white tracking-tight mb-4">Мій щоденник</h1>
+                    <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">Детальна аналітика вашої успішності на платформі.</p>
+                </div>
 
-            {error && <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-800/30">{error}</div>}
-
-            {totalGrades > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
-                    
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-between transition-colors">
-                        <div>
-                            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Середній бал</p>
+                {totalGrades > 0 && (
+                    <div className="relative z-10 flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto">
+                        <div className="flex-1 bg-gray-50 dark:bg-gray-800/40 p-5 sm:p-6 rounded-3xl border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm min-w-35 flex flex-col justify-between">
+                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Середній бал</p>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-4xl font-extrabold text-gray-900 dark:text-white">{averageScore}</span>
-                                <span className="text-sm font-medium text-gray-400 dark:text-gray-500">/ 100</span>
+                                <span className={`text-4xl font-black ${statusConfig.color.split(' ')[0]}`}>{averageScore}</span>
+                                <span className="text-sm font-bold text-gray-400">/ 100</span>
                             </div>
                         </div>
-                        <div className={`w-14 h-14 rounded-full flex items-center justify-center border-4 ${averageScore >= 80 ? 'border-green-100 dark:border-green-800/30 bg-green-50 dark:bg-green-900/20' : averageScore >= 60 ? 'border-amber-100 dark:border-amber-800/30 bg-amber-50 dark:bg-amber-900/20' : 'border-red-100 dark:border-red-800/30 bg-red-50 dark:bg-red-900/20'}`}>
-                            <span className={`text-xl font-bold ${statusConfig.color.split(' ')[0]} ${statusConfig.color.split(' ')[1]}`}>{averageScore}</span>
+                        
+                        <div className="flex-1 bg-gray-50 dark:bg-gray-800/40 p-5 sm:p-6 rounded-3xl border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm min-w-35 flex flex-col justify-between">
+                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Оцінено робіт</p>
+                            <span className="text-4xl font-black text-gray-900 dark:text-white">{totalGrades}</span>
+                        </div>
+
+                        <div className={`flex-1 p-5 sm:p-6 rounded-3xl border ${statusConfig.bg} ${statusConfig.border} backdrop-blur-sm min-w-37.5 flex flex-col justify-between`}>
+                            <p className={`text-xs font-black uppercase tracking-widest mb-3 ${statusConfig.color}`}>Статус</p>
+                            <div className="flex items-center gap-3">
+                                {statusConfig.icon}
+                                <span className={`text-lg font-black leading-tight ${statusConfig.color}`}>{statusConfig.text}</span>
+                            </div>
                         </div>
                     </div>
-
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-between transition-colors">
-                        <div>
-                            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Перевірено робіт</p>
-                            <span className="text-4xl font-extrabold text-gray-900 dark:text-white">{totalGrades}</span>
-                        </div>
-                        <div className="w-14 h-14 rounded-full flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 border-4 border-blue-100 dark:border-blue-800/30">
-                            <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-between transition-colors">
-                        <div>
-                            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Статус успішності</p>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 mt-1 rounded-md text-sm font-bold border ${statusConfig.bg} ${statusConfig.color} ${statusConfig.border}`}>
-                                {statusConfig.text}
-                            </span>
-                        </div>
-                        <div className={`w-14 h-14 rounded-full flex items-center justify-center border-4 ${statusConfig.bg} ${statusConfig.border.replace('border-', 'border-opacity-50 border-')}`}>
-                            {statusConfig.icon}
-                        </div>
-                    </div>
-
-                </div>
-            )}
-
-            <div className="flex items-center justify-between mb-5">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Історія оцінювання</h2>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
-                {grades.length === 0 ? (
-                    <div className="text-center py-16 px-4">
-                        <svg className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Оцінок поки немає</h3>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">Виконуйте завдання, і результати з'являться тут.</p>
-                    </div>
-                ) : (
-                    <ul className="divide-y divide-gray-100 dark:divide-gray-700">
-                        {grades.map((grade, index) => {
-                            const isHigh = grade.score >= 80;
-                            const isMid = grade.score >= 60 && grade.score < 80;
-                            const scoreColor = isHigh ? 'text-green-700 dark:text-green-400' : isMid ? 'text-amber-700 dark:text-amber-400' : 'text-red-700 dark:text-red-400';
-                            const scoreBg = isHigh ? 'bg-green-50 dark:bg-green-900/20' : isMid ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-red-50 dark:bg-red-900/20';
-                            const scoreBorder = isHigh ? 'border-green-200 dark:border-green-800/30' : isMid ? 'border-amber-200 dark:border-amber-800/30' : 'border-red-200 dark:border-red-800/30';
-
-                            return (
-                                <li key={index} className="p-5 sm:p-6 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors flex flex-col md:flex-row gap-6 md:items-center justify-between">
-                                    
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-3 mb-1.5">
-                                            <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2.5 py-0.5 rounded-md border border-blue-100 dark:border-blue-800/30">
-                                                {grade.course_title}
-                                            </span>
-                                            <span className="text-xs font-medium text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                                {new Date(grade.graded_at).toLocaleDateString('uk-UA')}
-                                            </span>
-                                        </div>
-                                        <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2 truncate" title={grade.assignment_title}>
-                                            {grade.assignment_title}
-                                        </h4>
-                                        
-                                        {grade.feedback ? (
-                                            <div className="flex items-start gap-2 mt-3">
-                                                <svg className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 italic">«{grade.feedback}»</p>
-                                            </div>
-                                        ) : (
-                                            <p className="text-sm text-gray-400 dark:text-gray-500 italic mt-3">Без коментарів</p>
-                                        )}
-                                    </div>
-
-                                    <div className="shrink-0 flex items-center md:justify-end">
-                                        <div className={`flex flex-col items-center justify-center min-w-20 h-20 rounded-2xl border ${scoreBg} ${scoreBorder} shadow-sm`}>
-                                            <span className={`text-3xl font-extrabold ${scoreColor.split(' ')[0]} ${scoreColor.split(' ')[1]} leading-none`}>
-                                                {grade.score}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                </li>
-                            );
-                        })}
-                    </ul>
                 )}
             </div>
+
+            {error && <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-2xl border border-red-200 dark:border-red-900/30 font-medium">{error}</div>}
+
+            {totalGrades === 0 ? (
+                <div className="text-center py-24 bg-white dark:bg-[#0f172a] rounded-[2.5rem] border border-dashed border-gray-200 dark:border-gray-800/80">
+                    <div className="w-16 h-16 mx-auto bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Оцінок поки немає</h3>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">Виконуйте завдання та тести, і результати з'являться тут.</p>
+                </div>
+            ) : (
+                <div className="space-y-8">
+                    {Object.entries(groupedGrades).map(([courseTitle, courseGrades]) => (
+                        <div key={courseTitle} className="bg-white dark:bg-[#0f172a] border border-gray-100 dark:border-gray-800/80 rounded-4xl overflow-hidden shadow-sm">
+                            
+                            <div className="bg-gray-50/50 dark:bg-gray-800/30 px-6 sm:px-8 py-5 border-b border-gray-100 dark:border-gray-800/50 flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path></svg>
+                                </div>
+                                <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">{courseTitle}</h2>
+                            </div>
+                            
+                            <div className="divide-y divide-gray-50 dark:divide-gray-800/50">
+                                {courseGrades.map((grade, idx) => {
+                                    const title = grade.item_title || grade.assignment_title;
+                                    const date = grade.created_at || grade.graded_at;
+                                    const type = grade.type || 'assignment';
+                                    const styles = getScoreStyles(grade.score);
+
+                                    return (
+                                        <div key={idx} className="p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:bg-gray-50/30 dark:hover:bg-gray-800/20 transition-colors">
+                                            
+                                            <div className="flex items-start gap-4">
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${type === 'quiz' ? 'bg-purple-50 border-purple-100 text-purple-600 dark:bg-purple-500/10 dark:border-purple-500/20 dark:text-purple-400' : 'bg-blue-50 border-blue-100 text-blue-600 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400'}`}>
+                                                    {type === 'quiz' ? (
+                                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                                    ) : (
+                                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                                    )}
+                                                </div>
+                                                
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${type === 'quiz' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                                                            {type === 'quiz' ? 'Тест' : 'Завдання'}
+                                                        </span>
+                                                        <span className="text-xs font-semibold text-gray-400 dark:text-gray-500">
+                                                            {date ? new Date(date).toLocaleDateString('uk-UA') : 'Дату не вказано'}
+                                                        </span>
+                                                    </div>
+                                                    <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{title}</h4>
+                                                    
+                                                    {grade.feedback && (
+                                                        <div className="inline-flex items-start gap-2 mt-1 bg-gray-50 dark:bg-gray-800/40 px-3 py-2 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                                                            <svg className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                                                            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium italic">«{grade.feedback}»</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className={`shrink-0 flex items-center justify-center min-w-20 h-20 rounded-2xl border-2 ${styles.bg} ${styles.border}`}>
+                                                <span className={`text-2xl font-black ${styles.color}`}>
+                                                    {grade.score}
+                                                </span>
+                                            </div>
+                                            
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

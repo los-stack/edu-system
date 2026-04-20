@@ -39,19 +39,40 @@ router.get('/my-grades', authMiddleware, async (req, res) => {
         const studentId = req.user.id;
 
         const query = `
-            SELECT g.score, g.feedback, g.graded_at, a.title AS assignment_title, c.title AS course_title
+            SELECT 
+                c.title as course_title, 
+                a.title as item_title, 
+                g.score, 
+                g.feedback, 
+                a.due_date as created_at,  -- ВИПРАВЛЕНО: беремо дату дедлайну завдання (a.due_date) замість g.created_at
+                'assignment' as type
             FROM grades g
             JOIN assignments a ON g.assignment_id = a.id
             JOIN courses c ON a.course_id = c.id
             WHERE g.student_id = $1
-            ORDER BY g.graded_at DESC
+            
+            UNION ALL
+            
+            SELECT 
+                c.title as course_title, 
+                q.title as item_title, 
+                qr.score, 
+                NULL as feedback, 
+                qr.completed_at as created_at, 
+                'quiz' as type
+            FROM quiz_results qr
+            JOIN quizzes q ON qr.quiz_id = q.id
+            JOIN courses c ON q.course_id = c.id
+            WHERE qr.student_id = $1
+            
+            ORDER BY created_at DESC NULLS LAST
         `;
-
-        const grades = await db.query(query, [studentId]);
-        res.json(grades.rows);
+        
+        const results = await db.query(query, [studentId]);
+        res.json(results.rows);
     } catch (error) {
-        console.error(error.message);
-        res.status(500).json({ error: 'Помилка при отриманні оцінок' });
+        console.error('Помилка при отриманні щоденника:', error);
+        res.status(500).json({ error: 'Помилка сервера при формуванні щоденника' });
     }
 });
 
@@ -173,6 +194,26 @@ router.get('/my-progress', authMiddleware, async (req, res) => {
     } catch (error) {
         console.error(error.message);
         res.status(500).json({ error: 'Помилка при отриманні прогресу' });
+    }
+});
+
+router.get('/', authMiddleware, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Доступ дозволено лише адміністраторам' });
+        }
+        
+        const query = `
+            SELECT id, name, email, role, avatar_url, created_at 
+            FROM users 
+            ORDER BY created_at DESC
+        `;
+        const usersRes = await db.query(query);
+        
+        res.json(usersRes.rows);
+    } catch (error) {
+        console.error('Помилка при отриманні користувачів:', error);
+        res.status(500).json({ error: 'Помилка сервера при отриманні користувачів' });
     }
 });
 

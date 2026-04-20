@@ -116,6 +116,27 @@ router.post('/:id/assignments', authMiddleware, roleMiddleware, upload.single('f
             [courseId, title, description, due_date, fileUrl]
         );
 
+        try {
+            const courseTitle = courseCheck.rows[0].title;
+            const enrollments = await db.query('SELECT student_id FROM enrollments WHERE course_id = $1', [courseId]);
+
+            if (enrollments.rows.length > 0) {
+                const message = `Нове завдання: "${title}" у курсі "${courseTitle}"`;
+                const link = `/course/${courseId}`;
+
+                const notificationQueries = enrollments.rows.map(row => {
+                    return db.query(
+                        'INSERT INTO notifications (user_id, message, type, link) VALUES ($1, $2, $3, $4)',
+                        [row.student_id, message, 'new_assignment', link]
+                    );
+                });
+
+                await Promise.all(notificationQueries);
+            }
+        } catch (notifErr) {
+            console.error('Помилка розсилки сповіщень студентам:', notifErr);
+        }
+
         res.status(201).json({
             message: 'Завдання успішно створено!',
             assignment: newAssignment.rows[0]
@@ -142,7 +163,7 @@ router.get('/:id/assignments', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/:id/students', authMiddleware, roleMiddleware, async (req, res) => {
+router.get('/:id/students', authMiddleware, async (req, res) => {
     try {
         const courseId = req.params.id;
         

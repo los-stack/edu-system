@@ -34,6 +34,9 @@ app.use('/api/admin', adminRoutes);
 const quizRoutes = require('./routes/quizzes');
 app.use('/api/quizzes', quizRoutes);
 
+const notificationRoutes = require('./routes/notifications');
+app.use('/api/notifications', notificationRoutes);
+
 app.get('/', (req, res) => {
     res.send('Привіт! Сервер інформаційної системи успішно працює!');
 });

@@ -34,6 +34,30 @@ router.post('/course/:courseId', authMiddleware, async (req, res) => {
         }
 
         await db.query('COMMIT'); 
+
+        try {
+            const courseRes = await db.query('SELECT title FROM courses WHERE id = $1', [courseId]);
+            const courseTitle = courseRes.rows[0]?.title || 'Курс';
+
+            const enrollments = await db.query('SELECT student_id FROM enrollments WHERE course_id = $1', [courseId]);
+
+            if (enrollments.rows.length > 0) {
+                const message = `Новий тест: "${title}" у курсі "${courseTitle}"`;
+                const link = `/course/${courseId}`;
+
+                const notificationQueries = enrollments.rows.map(row => {
+                    return db.query(
+                        'INSERT INTO notifications (user_id, message, type, link) VALUES ($1, $2, $3, $4)',
+                        [row.student_id, message, 'new_quiz', link]
+                    );
+                });
+
+                await Promise.all(notificationQueries);
+            }
+        } catch (notifErr) {
+            console.error('Помилка розсилки сповіщень про тест:', notifErr);
+        }
+
         res.status(201).json({ message: 'Тест успішно створено!', quizId });
     } catch (error) {
         await db.query('ROLLBACK'); 
@@ -112,6 +136,27 @@ router.post('/:quizId/submit', authMiddleware, async (req, res) => {
             'INSERT INTO quiz_results (quiz_id, student_id, score) VALUES ($1, $2, $3)',
             [quizId, studentId, score]
         );
+
+        try {
+            const quizInfoRes = await db.query(`
+                SELECT q.title, c.id as course_id, c.teacher_id 
+                FROM quizzes q 
+                JOIN courses c ON q.course_id = c.id 
+                WHERE q.id = $1
+            `, [quizId]);
+
+            if (quizInfoRes.rows.length > 0) {
+                const { title, course_id, teacher_id } = quizInfoRes.rows[0];
+                const message = `Студент ${req.user.name} здав тест "${title}" на ${score}/100`;
+                
+                await db.query(
+                    'INSERT INTO notifications (user_id, message, type, link) VALUES ($1, $2, $3, $4)',
+                    [teacher_id, message, 'grade', `/course/${course_id}`]
+                );
+            }
+        } catch (notifErr) {
+            console.error('Помилка надсилання сповіщення викладачу про здачу тесту:', notifErr);
+        }
 
         res.json({ message: 'Тест успішно завершено!', score });
     } catch (error) {
