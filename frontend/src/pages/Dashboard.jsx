@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -27,23 +29,25 @@ function Dashboard() {
                 window.dispatchEvent(new Event('user-updated'));
 
                 const coursesResponse = await axios.get('/api/courses');
-                setCourses(coursesResponse.data);
+                setCourses(Array.isArray(coursesResponse.data) ? coursesResponse.data : []);
 
                 if (currentUser.role === 'student') {
                     const deadlinesRes = await axios.get('/api/users/my-deadlines');
-                    setDeadlines(deadlinesRes.data);
+                    setDeadlines(Array.isArray(deadlinesRes.data) ? deadlinesRes.data : []);
 
                     const enrollmentsRes = await axios.get('/api/users/my-enrollments');
-                    setEnrolledCourseIds(enrollmentsRes.data);
+                    setEnrolledCourseIds(Array.isArray(enrollmentsRes.data) ? enrollmentsRes.data : []);
 
                     const progressRes = await axios.get('/api/users/my-progress');
                     const pMap = {};
-                    progressRes.data.forEach(p => {
-                        pMap[p.course_id] = {
-                            total: parseInt(p.total_tasks),
-                            completed: parseInt(p.completed_tasks)
-                        };
-                    });
+                    if (Array.isArray(progressRes.data)) {
+                        progressRes.data.forEach(p => {
+                            pMap[p.course_id] = {
+                                total: parseInt(p.total_tasks) || 0,
+                                completed: parseInt(p.completed_tasks) || 0
+                            };
+                        });
+                    }
                     setProgressMap(pMap);
                 }
             } catch (error) {
@@ -72,9 +76,11 @@ function Dashboard() {
     const handleCreateCourse = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('/api/courses', { title: newCourseTitle, description: newCourseDesc });
-            const newCourse = { ...response.data.course, teacher_name: user.name };
-            setCourses([newCourse, ...courses]); 
+            await axios.post('/api/courses', { title: newCourseTitle, description: newCourseDesc });
+            
+            const coursesResponse = await axios.get('/api/courses');
+            setCourses(Array.isArray(coursesResponse.data) ? coursesResponse.data : []);
+            
             setNewCourseTitle('');
             setNewCourseDesc('');
             setIsCourseModalOpen(false);
@@ -89,7 +95,7 @@ function Dashboard() {
         try {
             const response = await axios.post(`/api/courses/${courseId}/enroll`, {});
             setEnrolledCourseIds(prev => [...prev, courseId]);
-            toast.success(response.data.message);
+            toast.success(response.data.message || 'Ви успішно записалися!');
         } catch (error) {
             console.error('Помилка при записі на курс:', error);
             toast.error(error.response?.data?.error || 'Помилка при записі на курс');
@@ -176,7 +182,9 @@ function Dashboard() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {courses.map((course) => {
+                    {courses?.map((course, index) => {
+                        if (!course) return null; 
+                        
                         const isEnrolled = enrolledCourseIds.includes(course.id);
                         const courseProgress = progressMap[course.id];
                         const showProgress = user.role === 'student' && isEnrolled && courseProgress;
@@ -185,10 +193,11 @@ function Dashboard() {
                             : 0;
 
                         return (
-                            <div key={course.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex flex-col h-full hover:shadow-md dark:hover:shadow-gray-900 transition-shadow group">
+                            <div key={course.id || `course-${index}`} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex flex-col h-full hover:shadow-md dark:hover:shadow-gray-900 transition-shadow group">
                                 <div className="grow mb-6">
                                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{course.title}</h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">{course.description}</p>
+                                    
+                                    <div className="prose dark:prose-invert max-w-none text-sm text-gray-600 dark:text-gray-400 line-clamp-3 wrap-break-word w-full overflow-hidden" dangerouslySetInnerHTML={{ __html: typeof course.description === 'string' ? course.description : '' }}></div>
                                 </div>
                                 <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1.5">
@@ -235,28 +244,33 @@ function Dashboard() {
             )}
 
             {isCourseModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 dark:bg-gray-900/80 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
-                        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 dark:bg-gray-900/80 backdrop-blur-sm p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all my-8 flex flex-col max-h-[90vh]">
+                        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 shrink-0">
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Створити новий курс</h3>
                             <button onClick={() => setIsCourseModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
                         </div>
-                        <form onSubmit={handleCreateCourse} className="p-6 space-y-5">
+                        <form id="createCourseForm" onSubmit={handleCreateCourse} className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Назва курсу</label>
                                 <input type="text" placeholder="Наприклад: Основи програмування" value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} required className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Опис курсу</label>
-                                <textarea placeholder="Про що цей курс..." value={newCourseDesc} onChange={(e) => setNewCourseDesc(e.target.value)} rows="4" required className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm resize-none" />
-                            </div>
-                            <div className="flex justify-end gap-3 pt-2">
-                                <button type="button" onClick={() => setIsCourseModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Скасувати</button>
-                                <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Створити курс</button>
+                                <ReactQuill 
+                                    theme="snow" 
+                                    value={newCourseDesc} 
+                                    onChange={setNewCourseDesc} 
+                                    placeholder="Про що цей курс..." 
+                                />
                             </div>
                         </form>
+                        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-gray-800/50 shrink-0">
+                            <button type="button" onClick={() => setIsCourseModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Скасувати</button>
+                            <button type="submit" form="createCourseForm" className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Створити курс</button>
+                        </div>
                     </div>
                 </div>
             )}

@@ -1,7 +1,59 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-body {
-  @apply bg-gray-50 dark:bg-gray-950;
+.quill {
+  display: flex;
+  flex-direction: column;
+}
+
+.ql-toolbar.ql-snow {
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  border-color: #d1d5db !important;
+  background-color: #f9fafb;
+}
+
+.ql-container.ql-snow {
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  border-color: #d1d5db !important;
+  min-height: 120px;
+  font-family: inherit !important;
+  font-size: 0.875rem !important;
+}
+
+.dark .ql-toolbar.ql-snow {
+  border-color: #374151 !important;
+  background-color: #1f2937 !important;
+}
+
+.dark .ql-container.ql-snow {
+  border-color: #374151 !important;
+}
+
+.dark .ql-editor {
+  color: #f3f4f6 !important;
+}
+
+.dark .ql-editor.ql-blank::before {
+  color: #6b7280 !important;
+}
+
+.dark .ql-stroke {
+  stroke: #d1d5db !important;
+}
+
+.dark .ql-fill {
+  fill: #d1d5db !important;
+}
+
+.dark .ql-picker {
+  color: #d1d5db !important;
+}
+
+.dark .ql-picker-options {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
 }

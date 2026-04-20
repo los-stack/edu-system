@@ -37,20 +37,20 @@ function CoursePage() {
                 setCourse(courseRes.data);
 
                 const assignmentsRes = await axios.get(`/api/courses/${id}/assignments`);
-                setAssignments(assignmentsRes.data);
+                setAssignments(Array.isArray(assignmentsRes.data) ? assignmentsRes.data : []);
 
                 const subRes = await axios.get(`/api/courses/${id}/submissions`);
-                setSubmissions(subRes.data);
+                setSubmissions(Array.isArray(subRes.data) ? subRes.data : []);
 
                 const commentsRes = await axios.get(`/api/courses/${id}/comments`);
-                setComments(commentsRes.data);
+                setComments(Array.isArray(commentsRes.data) ? commentsRes.data : []);
 
                 const quizzesRes = await axios.get(`/api/quizzes/course/${id}`);
-                setQuizzes(quizzesRes.data);
+                setQuizzes(Array.isArray(quizzesRes.data) ? quizzesRes.data : []);
 
                 if (currentUser.role === 'student') {
                     const myResultsRes = await axios.get(`/api/quizzes/my-results/${id}`);
-                    setMyQuizResults(myResultsRes.data);
+                    setMyQuizResults(Array.isArray(myResultsRes.data) ? myResultsRes.data : []);
                 }
 
                 if (currentUser.role === 'teacher') {
@@ -72,10 +72,13 @@ function CoursePage() {
 
     const handleCreateAssignment = async (formData) => {
         try {
-            const response = await axios.post(`/api/courses/${id}/assignments`, formData, { 
+            await axios.post(`/api/courses/${id}/assignments`, formData, { 
                 headers: { 'Content-Type': 'multipart/form-data' } 
             });
-            setAssignments([...assignments, response.data.assignment]);
+            
+            const assignmentsRes = await axios.get(`/api/courses/${id}/assignments`);
+            setAssignments(Array.isArray(assignmentsRes.data) ? assignmentsRes.data : []);
+            
             setIsAssignmentModalOpen(false);
             toast.success('Завдання додано!');
         } catch (error) {
@@ -87,8 +90,10 @@ function CoursePage() {
     const handleCreateQuiz = async (quizData) => {
         try {
             await axios.post(`/api/quizzes/course/${id}`, quizData);
+            
             const quizzesRes = await axios.get(`/api/quizzes/course/${id}`);
-            setQuizzes(quizzesRes.data);
+            setQuizzes(Array.isArray(quizzesRes.data) ? quizzesRes.data : []);
+            
             setIsQuizModalOpen(false);
             toast.success('Тест створено!');
         } catch (error) {
@@ -111,10 +116,12 @@ function CoursePage() {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
+            const subData = res.data?.submission || res.data;
+
             toast.success('Роботу успішно завантажено!');
             setSubmissions(prev => {
                 const filtered = prev.filter(s => !(s.assignment_id === assignmentId && s.student_id === user.id));
-                return [...filtered, { assignment_id: assignmentId, student_id: user.id, file_url: res.data.submission.file_url, student_name: user.name }];
+                return [...filtered, { assignment_id: assignmentId, student_id: user.id, file_url: subData.file_url, student_name: user.name }];
             });
             fileInput.value = ''; 
         } catch (error) {
@@ -155,7 +162,7 @@ function CoursePage() {
     const handleCommentSubmit = async (assignmentId, text) => {
         try {
             const res = await axios.post(`/api/assignments/${assignmentId}/comments`, { text: text });
-            setComments([...comments, res.data.comment]);
+            setComments([...comments, res.data?.comment || res.data]);
         } catch (error) {
             console.error('Помилка відправки коментаря:', error);
             toast.error('Помилка при відправці коментаря');
@@ -184,7 +191,7 @@ function CoursePage() {
             
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-8 transition-colors">
                 <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">{course.title}</h1>
-                <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">{course.description}</p>
+                <div className="prose prose-lg dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 wrap-break-word w-full overflow-hidden" dangerouslySetInnerHTML={{ __html: typeof course.description === 'string' ? course.description : '' }}></div>
                 
                 {user.role === 'student' && (
                     <div className="mt-6 bg-gray-50 dark:bg-gray-900/50 p-5 rounded-xl border border-gray-100 dark:border-gray-700">
@@ -205,7 +212,6 @@ function CoursePage() {
 
                 {user.role === 'teacher' && analytics && (
                     <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-5">
-                        
                         <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition-colors shadow-sm hover:shadow-md">
                             <div className="flex items-center justify-between mb-3">
                                 <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Студентів</p>
@@ -241,7 +247,7 @@ function CoursePage() {
                             <div className="flex items-center justify-between mb-3">
                                 <p className={`text-sm font-bold uppercase tracking-wider ${analytics.pendingReviews > 0 ? 'text-amber-700 dark:text-amber-500' : 'text-gray-500 dark:text-gray-400'}`}>На перевірку</p>
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center border ${analytics.pendingReviews > 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/30' : 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700'}`}>
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 </div>
                             </div>
                             <div className="flex items-baseline gap-2">
@@ -249,7 +255,6 @@ function CoursePage() {
                                 <p className={`text-sm font-medium ${analytics.pendingReviews > 0 ? 'text-amber-600 dark:text-amber-500' : 'text-gray-500 dark:text-gray-400'}`}>нових робіт</p>
                             </div>
                         </div>
-                        
                     </div>
                 )}
             </div>
@@ -273,10 +278,11 @@ function CoursePage() {
                     <div className="text-center py-8 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
                         <p className="text-gray-500 dark:text-gray-400">Тестів поки немає.</p>
                     </div>
-                ) : quizzes.map(quiz => {
+                ) : quizzes?.map((quiz, index) => {
+                    if (!quiz) return null;
                     const myResult = myQuizResults.find(r => r.quiz_id === quiz.id);
                     return (
-                        <div key={quiz.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:shadow-md transition-shadow">
+                        <div key={quiz.id || index} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:shadow-md transition-shadow">
                             <div className="flex-1">
                                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{quiz.title}</h3>
                                 <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{quiz.description}</p>
@@ -329,17 +335,18 @@ function CoursePage() {
                     <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
                         <p className="text-gray-500 dark:text-gray-400">Завдань ще немає.</p>
                     </div>
-                ) : assignments.map((assignment) => {
+                ) : assignments?.map((assignment, index) => {
+                    if (!assignment) return null;
                     const assignmentSubmissions = submissions.filter(s => s.assignment_id === assignment.id);
                     const mySub = assignmentSubmissions.find(s => s.student_id === user.id);
                     const assignmentComments = comments.filter(c => c.assignment_id === assignment.id);
                     const isCommentsOpen = openComments.includes(assignment.id);
 
                     return (
-                        <div key={assignment.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div key={assignment.id || index} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                             <div className="p-6 sm:p-8">
                                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{assignment.title}</h3>
-                                <p className="text-gray-600 dark:text-gray-300 mb-6 whitespace-pre-wrap leading-relaxed">{assignment.description}</p>
+                                <div className="prose dark:prose-invert max-w-none mb-6 text-gray-600 dark:text-gray-300 wrap-break-word w-full overflow-hidden" dangerouslySetInnerHTML={{ __html: typeof assignment.description === 'string' ? assignment.description : '' }}></div>
                                 
                                 <div className="flex flex-wrap items-center gap-4 mb-2">
                                     <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 text-amber-800 dark:text-amber-400 text-sm font-medium">
