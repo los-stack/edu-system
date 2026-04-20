@@ -5,6 +5,45 @@ import toast from 'react-hot-toast';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
+const CreateCourseModal = ({ isOpen, onClose, onCreate }) => {
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onCreate({ title, description });
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 dark:bg-gray-900/80 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all my-8 flex flex-col max-h-[90vh]">
+                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 shrink-0">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Створити новий курс</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <form id="createCourseForm" onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Назва курсу</label>
+                        <input type="text" placeholder="Наприклад: Основи програмування" value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Опис курсу</label>
+                        <ReactQuill theme="snow" value={description} onChange={setDescription} placeholder="Про що цей курс..." />
+                    </div>
+                </form>
+                <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-gray-800/50 shrink-0">
+                    <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Скасувати</button>
+                    <button type="submit" form="createCourseForm" className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Створити курс</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 function Dashboard() {
     const navigate = useNavigate();
     
@@ -14,8 +53,6 @@ function Dashboard() {
     const [deadlines, setDeadlines] = useState([]);
     const [enrolledCourseIds, setEnrolledCourseIds] = useState([]);
     const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
-    const [newCourseTitle, setNewCourseTitle] = useState('');
-    const [newCourseDesc, setNewCourseDesc] = useState('');
     const [progressMap, setProgressMap] = useState({});
 
     useEffect(() => {
@@ -73,16 +110,12 @@ function Dashboard() {
         }
     };
 
-    const handleCreateCourse = async (e) => {
-        e.preventDefault();
+    const handleCreateCourse = async ({ title, description }) => {
         try {
-            await axios.post('/api/courses', { title: newCourseTitle, description: newCourseDesc });
-            
+            await axios.post('/api/courses', { title, description });
             const coursesResponse = await axios.get('/api/courses');
             setCourses(Array.isArray(coursesResponse.data) ? coursesResponse.data : []);
             
-            setNewCourseTitle('');
-            setNewCourseDesc('');
             setIsCourseModalOpen(false);
             toast.success('Курс успішно створено!');
         } catch (error) {
@@ -243,37 +276,7 @@ function Dashboard() {
                 </div>
             )}
 
-            {isCourseModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 dark:bg-gray-900/80 backdrop-blur-sm p-4 overflow-y-auto">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all my-8 flex flex-col max-h-[90vh]">
-                        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 shrink-0">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Створити новий курс</h3>
-                            <button onClick={() => setIsCourseModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
-                        </div>
-                        <form id="createCourseForm" onSubmit={handleCreateCourse} className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Назва курсу</label>
-                                <input type="text" placeholder="Наприклад: Основи програмування" value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} required className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Опис курсу</label>
-                                <ReactQuill 
-                                    theme="snow" 
-                                    value={newCourseDesc} 
-                                    onChange={setNewCourseDesc} 
-                                    placeholder="Про що цей курс..." 
-                                />
-                            </div>
-                        </form>
-                        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-gray-800/50 shrink-0">
-                            <button type="button" onClick={() => setIsCourseModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Скасувати</button>
-                            <button type="submit" form="createCourseForm" className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Створити курс</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <CreateCourseModal isOpen={isCourseModalOpen} onClose={() => setIsCourseModalOpen(false)} onCreate={handleCreateCourse} />
         </div>
     );
 }

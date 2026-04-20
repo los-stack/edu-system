@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -6,6 +6,7 @@ import CreateAssignmentModal from '../components/CreateAssignmentModal';
 import CommentSection from '../components/CommentSection';             
 import CreateQuizModal from '../components/CreateQuizModal';
 import QuizResultsModal from '../components/QuizResultsModal';
+
 
 function CoursePage() {
     const { id } = useParams(); 
@@ -24,6 +25,9 @@ function CoursePage() {
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
     const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
     const [selectedQuizForResults, setSelectedQuizForResults] = useState(null);
+    const closeAssignmentModal = useCallback(() => setIsAssignmentModalOpen(false), []);
+    const closeQuizModal = useCallback(() => setIsQuizModalOpen(false), []);
+    const closeQuizResultsModal = useCallback(() => setSelectedQuizForResults(null), []);
     const [openComments, setOpenComments] = useState([]);
 
     useEffect(() => {
@@ -33,27 +37,24 @@ function CoursePage() {
                 const currentUser = profileRes.data;
                 setUser(currentUser);
 
-                const courseRes = await axios.get(`/api/courses/${id}`);
+                const [courseRes, assignmentsRes, subRes, commentsRes, quizzesRes] = await Promise.all([
+                    axios.get(`/api/courses/${id}`),
+                    axios.get(`/api/courses/${id}/assignments`),
+                    axios.get(`/api/courses/${id}/submissions`),
+                    axios.get(`/api/courses/${id}/comments`),
+                    axios.get(`/api/quizzes/course/${id}`)
+                ]);
+
                 setCourse(courseRes.data);
-
-                const assignmentsRes = await axios.get(`/api/courses/${id}/assignments`);
                 setAssignments(Array.isArray(assignmentsRes.data) ? assignmentsRes.data : []);
-
-                const subRes = await axios.get(`/api/courses/${id}/submissions`);
                 setSubmissions(Array.isArray(subRes.data) ? subRes.data : []);
-
-                const commentsRes = await axios.get(`/api/courses/${id}/comments`);
                 setComments(Array.isArray(commentsRes.data) ? commentsRes.data : []);
-
-                const quizzesRes = await axios.get(`/api/quizzes/course/${id}`);
                 setQuizzes(Array.isArray(quizzesRes.data) ? quizzesRes.data : []);
 
                 if (currentUser.role === 'student') {
                     const myResultsRes = await axios.get(`/api/quizzes/my-results/${id}`);
                     setMyQuizResults(Array.isArray(myResultsRes.data) ? myResultsRes.data : []);
-                }
-
-                if (currentUser.role === 'teacher') {
+                } else if (currentUser.role === 'teacher') {
                     const analyticsRes = await axios.get(`/api/courses/${id}/analytics`);
                     setAnalytics(analyticsRes.data);
                 }
@@ -66,6 +67,33 @@ function CoursePage() {
         fetchCourseData();
     }, [id, navigate]);
 
+    const submissionsMap = useMemo(() => {
+        const map = {};
+        submissions.forEach(s => {
+            if (!map[s.assignment_id]) map[s.assignment_id] = [];
+            map[s.assignment_id].push(s);
+        });
+        return map;
+    }, [submissions]);
+
+    const commentsMap = useMemo(() => {
+        const map = {};
+        comments.forEach(c => {
+            if (!map[c.assignment_id]) map[c.assignment_id] = [];
+            map[c.assignment_id].push(c);
+        });
+        return map;
+    }, [comments]);
+
+    const myQuizResultsMap = useMemo(() => {
+        const map = {};
+        myQuizResults.forEach(r => {
+            map[r.quiz_id] = r;
+        });
+        return map;
+    }, [myQuizResults]);
+
+
     const toggleComments = (assignmentId) => {
         setOpenComments(prev => prev.includes(assignmentId) ? prev.filter(aId => aId !== assignmentId) : [...prev, assignmentId]);
     };
@@ -75,10 +103,8 @@ function CoursePage() {
             await axios.post(`/api/courses/${id}/assignments`, formData, { 
                 headers: { 'Content-Type': 'multipart/form-data' } 
             });
-            
             const assignmentsRes = await axios.get(`/api/courses/${id}/assignments`);
             setAssignments(Array.isArray(assignmentsRes.data) ? assignmentsRes.data : []);
-            
             setIsAssignmentModalOpen(false);
             toast.success('Завдання додано!');
         } catch (error) {
@@ -90,10 +116,8 @@ function CoursePage() {
     const handleCreateQuiz = async (quizData) => {
         try {
             await axios.post(`/api/quizzes/course/${id}`, quizData);
-            
             const quizzesRes = await axios.get(`/api/quizzes/course/${id}`);
             setQuizzes(Array.isArray(quizzesRes.data) ? quizzesRes.data : []);
-            
             setIsQuizModalOpen(false);
             toast.success('Тест створено!');
         } catch (error) {
@@ -178,7 +202,7 @@ function CoursePage() {
 
     if (user.role === 'student') {
         totalTasks = assignments.length + quizzes.length;
-        const mySubmissionsCount = assignments.filter(a => submissions.some(s => s.assignment_id === a.id && s.student_id === user.id)).length;
+        const mySubmissionsCount = assignments.filter(a => submissionsMap[a.id]?.some(s => s.student_id === user.id)).length;
         completedTasks = mySubmissionsCount + myQuizResults.length;
         progressPercentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
     }
@@ -280,7 +304,7 @@ function CoursePage() {
                     </div>
                 ) : quizzes?.map((quiz, index) => {
                     if (!quiz) return null;
-                    const myResult = myQuizResults.find(r => r.quiz_id === quiz.id);
+                    const myResult = myQuizResultsMap[quiz.id];
                     return (
                         <div key={quiz.id || index} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:shadow-md transition-shadow">
                             <div className="flex-1">
@@ -337,9 +361,10 @@ function CoursePage() {
                     </div>
                 ) : assignments?.map((assignment, index) => {
                     if (!assignment) return null;
-                    const assignmentSubmissions = submissions.filter(s => s.assignment_id === assignment.id);
+                    
+                    const assignmentSubmissions = submissionsMap[assignment.id] || [];
                     const mySub = assignmentSubmissions.find(s => s.student_id === user.id);
-                    const assignmentComments = comments.filter(c => c.assignment_id === assignment.id);
+                    const assignmentComments = commentsMap[assignment.id] || [];
                     const isCommentsOpen = openComments.includes(assignment.id);
 
                     return (
@@ -451,9 +476,15 @@ function CoursePage() {
                 })}
             </div>
 
-            <CreateAssignmentModal isOpen={isAssignmentModalOpen} onClose={() => setIsAssignmentModalOpen(false)} onCreate={handleCreateAssignment} />
-            <CreateQuizModal isOpen={isQuizModalOpen} onClose={() => setIsQuizModalOpen(false)} onCreate={handleCreateQuiz} />
-            <QuizResultsModal isOpen={!!selectedQuizForResults} onClose={() => setSelectedQuizForResults(null)} quiz={selectedQuizForResults} />
+            {isAssignmentModalOpen && (
+                <CreateAssignmentModal isOpen={isAssignmentModalOpen} onClose={closeAssignmentModal} onCreate={handleCreateAssignment} />
+            )}
+            {isQuizModalOpen && (
+                <CreateQuizModal isOpen={isQuizModalOpen} onClose={closeQuizModal} onCreate={handleCreateQuiz} />
+            )}
+            {selectedQuizForResults && (
+                <QuizResultsModal isOpen={!!selectedQuizForResults} onClose={closeQuizResultsModal} quiz={selectedQuizForResults} />
+            )}
         </div>
     );
 }
