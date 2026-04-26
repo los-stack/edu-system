@@ -54,7 +54,7 @@ function CoursePage() {
                 if (currentUser.role === 'student') {
                     const myResultsRes = await axios.get(`/api/quizzes/my-results/${id}`);
                     setMyQuizResults(Array.isArray(myResultsRes.data) ? myResultsRes.data : []);
-                } else if (currentUser.role === 'teacher') {
+                } else if (currentUser.role === 'teacher' || currentUser.role === 'admin') {
                     const analyticsRes = await axios.get(`/api/courses/${id}/analytics`);
                     setAnalytics(analyticsRes.data);
                 }
@@ -223,7 +223,7 @@ function CoursePage() {
                 >
                     Навчання
                 </button>
-                {user.role === 'teacher' && (
+                {(user.role === 'teacher' || user.role === 'admin') && (
                     <button 
                         onClick={() => setActiveTab('submissions')}
                         className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'submissions' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm border border-zinc-200/50 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
@@ -246,7 +246,7 @@ function CoursePage() {
                         <section>
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">Тести</h2>
-                                {user.role === 'teacher' && (
+                                {(user.role === 'teacher' || user.role === 'admin') && (
                                     <button onClick={() => setIsQuizModalOpen(true)} className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20">
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
                                     </button>
@@ -282,7 +282,7 @@ function CoursePage() {
                         <section>
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">Завдання та лекції</h2>
-                                {user.role === 'teacher' && (
+                                {(user.role === 'teacher' || user.role === 'admin') && (
                                     <button onClick={() => setIsAssignmentModalOpen(true)} className="p-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl hover:opacity-80 transition-all shadow-lg">
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
                                     </button>
@@ -291,30 +291,37 @@ function CoursePage() {
                             <div className="space-y-6">
                                 {assignments.map(assignment => {
                                     const mySub = submissionsMap[assignment.id]?.find(s => s.student_id === user.id);
+                                    const isOverdue = new Date(assignment.due_date) < new Date();
                                     return (
                                         <div key={assignment.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xl shadow-zinc-200/40 dark:shadow-none hover:shadow-2xl hover:shadow-zinc-200/60 transition-all">
                                             <div className="p-8">
                                                 <div className="flex justify-between items-start mb-4">
                                                     <h3 className="text-xl font-bold text-zinc-900 dark:text-white">{assignment.title}</h3>
-                                                    <span className="px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black rounded-lg border border-amber-100 dark:border-amber-500/20 uppercase tracking-widest">Дедлайн: {new Date(assignment.due_date).toLocaleDateString()}</span>
+                                                    <span className={`px-3 py-1 text-[10px] font-black rounded-lg border uppercase tracking-widest ${isOverdue ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-100 dark:border-red-500/20' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20'}`}>
+                                                        Дедлайн: {new Date(assignment.due_date).toLocaleDateString()}
+                                                    </span>
                                                 </div>
                                                 <div className="prose dark:prose-invert max-w-none text-zinc-500 dark:text-zinc-400 mb-8" dangerouslySetInnerHTML={{ __html: assignment.description }}></div>
                                                 
+                                                <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                                                    {assignment.file_url && <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${assignment.file_url}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 bg-blue-50 dark:bg-blue-500/10 px-4 py-2 rounded-xl transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Завантажити матеріали</a>}
+                                                </div>
+
                                                 {user.role === 'student' && (
-                                                    <div className="p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-3xl border border-zinc-100 dark:border-zinc-700/50">
+                                                    <div className="mt-6 p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-3xl border border-zinc-100 dark:border-zinc-700/50">
                                                         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                                                             <div className="flex items-center gap-3">
-                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${mySub ? 'bg-green-100 text-green-600 dark:bg-green-500/20' : 'bg-zinc-200 text-zinc-400 dark:bg-zinc-700'}`}>
+                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${mySub ? 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400' : 'bg-zinc-200 text-zinc-400 dark:bg-zinc-700 dark:text-zinc-500'}`}>
                                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
                                                                 </div>
                                                                 <div>
                                                                     <p className="text-sm font-bold text-zinc-900 dark:text-white">{mySub ? 'Роботу здано' : 'Роботу не здано'}</p>
-                                                                    {mySub?.score !== null && mySub?.score !== undefined && <p className="text-xs font-bold text-green-600">Оцінка: {mySub.score}/100</p>}
+                                                                    {mySub?.score !== null && mySub?.score !== undefined && <p className="text-xs font-bold text-green-600 dark:text-green-400">Оцінка: {mySub.score}/100</p>}
                                                                 </div>
                                                             </div>
                                                             <form onSubmit={(e) => handleStudentSubmit(e, assignment.id)} className="flex gap-2 w-full sm:w-auto">
                                                                 <input type="file" id={`studentFile-${assignment.id}`} className="hidden" onChange={(e) => {if(e.target.files[0]) toast.success(`Файл обрано: ${e.target.files[0].name}`)}} />
-                                                                <label htmlFor={`studentFile-${assignment.id}`} className="cursor-pointer px-4 py-2 bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 text-xs font-bold rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-600 transition-all">ОБРАТИ ФАЙЛ</label>
+                                                                <label htmlFor={`studentFile-${assignment.id}`} className="cursor-pointer px-4 py-2 bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 text-xs font-bold rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-600 transition-all text-zinc-700 dark:text-zinc-300">ОБРАТИ ФАЙЛ</label>
                                                                 <button type="submit" className="px-4 py-2 bg-blue-600 text-white text-xs font-black rounded-xl hover:bg-blue-500 shadow-md shadow-blue-500/20 transition-all">ВІДПРАВИТИ</button>
                                                             </form>
                                                         </div>
@@ -330,7 +337,7 @@ function CoursePage() {
                     </div>
                 )}
 
-                {activeTab === 'submissions' && user.role === 'teacher' && (
+                {activeTab === 'submissions' && (user.role === 'teacher' || user.role === 'admin') && (
                     <div className="space-y-6">
                         <h2 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">Роботи студентів</h2>
                         {submissions.length === 0 ? (
@@ -343,15 +350,15 @@ function CoursePage() {
                                             <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-blue-500/20">{sub.student_name.charAt(0)}</div>
                                             <div>
                                                 <h4 className="font-bold text-zinc-900 dark:text-white">{sub.student_name}</h4>
-                                                <a href={`${import.meta.env.VITE_API_URL}${sub.file_url}`} target="_blank" rel="noreferrer" className="text-xs font-bold text-blue-500 hover:text-blue-400 transition-colors">ЗАВАНТАЖИТИ ФАЙЛ</a>
+                                                <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${sub.file_url}`} target="_blank" rel="noreferrer" className="text-xs font-bold text-blue-500 hover:text-blue-400 transition-colors">ЗАВАНТАЖИТИ ФАЙЛ</a>
                                             </div>
                                         </div>
                                         {sub.score !== null ? (
-                                            <div className="px-6 py-2 bg-green-50 dark:bg-green-500/10 border border-green-100 dark:border-green-500/20 rounded-2xl text-green-600 font-black text-sm">ОЦІНЕНО: {sub.score}/100</div>
+                                            <div className="px-6 py-2 bg-green-50 dark:bg-green-500/10 border border-green-100 dark:border-green-500/20 rounded-2xl text-green-600 dark:text-green-400 font-black text-sm">ОЦІНЕНО: {sub.score}/100</div>
                                         ) : (
                                             <form onSubmit={(e) => handleGradeSubmit(e, sub.assignment_id, sub.student_id)} className="flex items-center gap-2 w-full lg:w-auto">
-                                                <input type="number" name="scoreInput" placeholder="Бал" className="w-20 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-                                                <input type="text" name="feedbackInput" placeholder="Відгук..." className="flex-1 lg:w-64 px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                                <input type="number" name="scoreInput" placeholder="Бал" min="0" max="100" className="w-20 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                                                <input type="text" name="feedbackInput" placeholder="Відгук..." className="flex-1 lg:w-64 px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                                 <button type="submit" className="px-6 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-black rounded-xl hover:opacity-80 transition-all shadow-sm">ОЦІНИТИ</button>
                                             </form>
                                         )}
@@ -368,13 +375,13 @@ function CoursePage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {courseStudents.length > 0 ? (
                                 courseStudents.map(s => (
-                                    <div key={s.id} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-100 dark:hover:border-zinc-700">
+                                    <div key={s.id} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors border border-transparent hover:border-zinc-100 dark:hover:border-zinc-700/50">
                                         <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center font-bold text-blue-600 dark:text-blue-400">
                                             {s.name.charAt(0)}
                                         </div>
                                         <div>
                                             <span className="block font-bold text-zinc-900 dark:text-zinc-200">{s.name}</span>
-                                            {user.role === 'teacher' && <span className="text-xs text-zinc-500">{s.email}</span>}
+                                            {(user.role === 'teacher' || user.role === 'admin') && <span className="text-xs text-zinc-500">{s.email}</span>}
                                         </div>
                                     </div>
                                 ))

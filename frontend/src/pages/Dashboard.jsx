@@ -14,10 +14,13 @@ const CreateCourseModal = ({ isOpen, onClose, onCreate }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         onCreate({ title, description });
+        setTitle('');
+        setDescription('');
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
+        /* ВИПРАВЛЕНО: Прибрано backdrop-blur-sm, додано bg-zinc-900/80 для швидкодії */
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/80 p-4 sm:p-6 overflow-y-auto">
             <div className="bg-white dark:bg-zinc-900 shadow-2xl dark:shadow-none dark:border dark:border-zinc-800 rounded-3xl w-full max-w-2xl overflow-hidden transform transition-all flex flex-col max-h-full my-auto">
                 <div className="px-8 py-6 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0">
                     <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">Створити новий курс</h3>
@@ -34,6 +37,7 @@ const CreateCourseModal = ({ isOpen, onClose, onCreate }) => {
                         <div>
                             <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Опис курсу</label>
                             <div className="rounded-xl overflow-hidden bg-zinc-50 dark:bg-zinc-800 dark:border dark:border-zinc-700">
+                                {/* ВИПРАВЛЕНО: Звичайний Quill без зайвих кешувань */}
                                 <ReactQuill theme="snow" value={description} onChange={setDescription} placeholder="Про що цей курс..." />
                             </div>
                         </div>
@@ -109,6 +113,7 @@ function Dashboard() {
             setCourses(Array.isArray(coursesResponse.data) ? coursesResponse.data : []);
             setIsCourseModalOpen(false);
             toast.success('Курс успішно створено!');
+        // eslint-disable-next-line no-unused-vars
         } catch (error) {
             toast.error('Помилка при створенні курсу');
         }

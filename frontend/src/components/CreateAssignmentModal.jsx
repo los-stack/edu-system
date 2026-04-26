@@ -1,28 +1,12 @@
-import React, { useState, lazy, Suspense, memo, useCallback } from 'react';
+import React, { useState, memo } from 'react';
+import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css'; 
-
-const ReactQuill = lazy(() => import('react-quill-new'));
-
-const MemoizedQuill = memo(({ value, onChange, placeholder }) => (
-    <Suspense fallback={<div className="h-32 flex items-center justify-center bg-zinc-50 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 text-sm">Завантаження редактора...</div>}>
-        <ReactQuill 
-            theme="snow" 
-            value={value} 
-            onChange={onChange} 
-            placeholder={placeholder}
-        />
-    </Suspense>
-));
 
 function CreateAssignmentModal({ isOpen, onClose, onCreate }) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [dueDate, setDueDate] = useState('');
     const [file, setFile] = useState(null);
-
-    const handleDescriptionChange = useCallback((val) => {
-        setDescription(val);
-    }, []);
 
     if (!isOpen) return null;
 
@@ -45,7 +29,7 @@ function CreateAssignmentModal({ isOpen, onClose, onCreate }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/80 p-4 overflow-y-auto">
             <div className="bg-white dark:bg-zinc-900 border border-transparent dark:border-zinc-800 rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col max-h-full my-auto animate-scale-in">
                 <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-transparent">
                     <h3 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">Створити нове завдання</h3>
@@ -65,9 +49,10 @@ function CreateAssignmentModal({ isOpen, onClose, onCreate }) {
                         <div>
                             <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">Опис завдання</label>
                             <div className="rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
-                                <MemoizedQuill 
+                                <ReactQuill 
+                                    theme="snow"
                                     value={description} 
-                                    onChange={handleDescriptionChange} 
+                                    onChange={setDescription} 
                                     placeholder="Додайте детальний опис, інструкції..."
                                 />
                             </div>

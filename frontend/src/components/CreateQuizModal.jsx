@@ -181,7 +181,7 @@ function CreateQuizModal({ isOpen, onClose, onCreate }) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4 sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/80 p-4 sm:p-6">
             <div className="bg-white dark:bg-zinc-900 rounded-4xl shadow-2xl dark:shadow-none dark:border dark:border-zinc-800 w-full max-w-3xl flex flex-col max-h-full border border-transparent">
                 <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-transparent shrink-0">
                     <h3 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">Створити новий тест</h3>
