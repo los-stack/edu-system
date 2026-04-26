@@ -81,31 +81,31 @@ function MyGrades() {
     return (
         <div className="max-w-7xl mx-auto pb-20 px-4 sm:px-6 lg:px-8 mt-4">
             
-            <div className="relative bg-white dark:bg-[#0f172a] rounded-[2.5rem] p-8 sm:p-12 mb-10 border border-gray-100 dark:border-gray-800/80 shadow-sm overflow-hidden flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
-                <div className="absolute top-0 right-0 w-125 h-125 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
+            <div className="relative bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 sm:p-12 mb-10 border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/40 dark:shadow-none overflow-hidden flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+                <div className="absolute top-0 right-0 w-125 h-125 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
                 
                 <div className="relative z-10 max-w-xl">
                     <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 dark:text-blue-400 mb-6 hover:gap-3 transition-all">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                         НАЗАД ДО ПАНЕЛІ
                     </Link>
-                    <h1 className="text-3xl sm:text-5xl font-black text-gray-900 dark:text-white tracking-tight mb-4">Мій щоденник</h1>
-                    <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">Детальна аналітика вашої успішності на платформі.</p>
+                    <h1 className="text-3xl sm:text-5xl font-black text-zinc-900 dark:text-white tracking-tight mb-4">Мій щоденник</h1>
+                    <p className="text-lg text-zinc-500 dark:text-zinc-400 font-medium">Детальна аналітика вашої успішності на платформі.</p>
                 </div>
 
                 {totalGrades > 0 && (
                     <div className="relative z-10 flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto">
-                        <div className="flex-1 bg-gray-50 dark:bg-gray-800/40 p-5 sm:p-6 rounded-3xl border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm min-w-35 flex flex-col justify-between">
-                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Середній бал</p>
+                        <div className="flex-1 bg-zinc-50 dark:bg-zinc-800/50 p-5 sm:p-6 rounded-3xl border border-zinc-100 dark:border-zinc-700/50 backdrop-blur-sm min-w-35 flex flex-col justify-between">
+                            <p className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Середній бал</p>
                             <div className="flex items-baseline gap-1">
                                 <span className={`text-4xl font-black ${statusConfig.color.split(' ')[0]}`}>{averageScore}</span>
-                                <span className="text-sm font-bold text-gray-400">/ 100</span>
+                                <span className="text-sm font-bold text-zinc-400">/ 100</span>
                             </div>
                         </div>
                         
-                        <div className="flex-1 bg-gray-50 dark:bg-gray-800/40 p-5 sm:p-6 rounded-3xl border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm min-w-35 flex flex-col justify-between">
-                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Оцінено робіт</p>
-                            <span className="text-4xl font-black text-gray-900 dark:text-white">{totalGrades}</span>
+                        <div className="flex-1 bg-zinc-50 dark:bg-zinc-800/50 p-5 sm:p-6 rounded-3xl border border-zinc-100 dark:border-zinc-700/50 backdrop-blur-sm min-w-35 flex flex-col justify-between">
+                            <p className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Оцінено робіт</p>
+                            <span className="text-4xl font-black text-zinc-900 dark:text-white">{totalGrades}</span>
                         </div>
 
                         <div className={`flex-1 p-5 sm:p-6 rounded-3xl border ${statusConfig.bg} ${statusConfig.border} backdrop-blur-sm min-w-37.5 flex flex-col justify-between`}>
@@ -122,26 +122,26 @@ function MyGrades() {
             {error && <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-2xl border border-red-200 dark:border-red-900/30 font-medium">{error}</div>}
 
             {totalGrades === 0 ? (
-                <div className="text-center py-24 bg-white dark:bg-[#0f172a] rounded-[2.5rem] border border-dashed border-gray-200 dark:border-gray-800/80">
-                    <div className="w-16 h-16 mx-auto bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <div className="text-center py-24 bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-xl shadow-zinc-200/40 dark:shadow-none border border-zinc-200 dark:border-zinc-800">
+                    <div className="w-16 h-16 mx-auto bg-zinc-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
+                        <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Оцінок поки немає</h3>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium">Виконуйте завдання та тести, і результати з'являться тут.</p>
+                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Оцінок поки немає</h3>
+                    <p className="text-zinc-500 dark:text-zinc-400 font-medium">Виконуйте завдання та тести, і результати з'являться тут.</p>
                 </div>
             ) : (
                 <div className="space-y-8">
                     {Object.entries(groupedGrades).map(([courseTitle, courseGrades]) => (
-                        <div key={courseTitle} className="bg-white dark:bg-[#0f172a] border border-gray-100 dark:border-gray-800/80 rounded-4xl overflow-hidden shadow-sm">
+                        <div key={courseTitle} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-4xl overflow-hidden shadow-xl shadow-zinc-200/40 dark:shadow-none">
                             
-                            <div className="bg-gray-50/50 dark:bg-gray-800/30 px-6 sm:px-8 py-5 border-b border-gray-100 dark:border-gray-800/50 flex items-center gap-3">
+                            <div className="bg-zinc-50/50 dark:bg-zinc-800/30 px-6 sm:px-8 py-5 border-b border-zinc-100 dark:border-zinc-800/50 flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path></svg>
                                 </div>
-                                <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">{courseTitle}</h2>
+                                <h2 className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">{courseTitle}</h2>
                             </div>
                             
-                            <div className="divide-y divide-gray-50 dark:divide-gray-800/50">
+                            <div className="divide-y divide-zinc-50 dark:divide-zinc-800/50">
                                 {courseGrades.map((grade, idx) => {
                                     const title = grade.item_title || grade.assignment_title;
                                     const date = grade.created_at || grade.graded_at;
@@ -149,7 +149,7 @@ function MyGrades() {
                                     const styles = getScoreStyles(grade.score);
 
                                     return (
-                                        <div key={idx} className="p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:bg-gray-50/30 dark:hover:bg-gray-800/20 transition-colors">
+                                        <div key={idx} className="p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors">
                                             
                                             <div className="flex items-start gap-4">
                                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${type === 'quiz' ? 'bg-purple-50 border-purple-100 text-purple-600 dark:bg-purple-500/10 dark:border-purple-500/20 dark:text-purple-400' : 'bg-blue-50 border-blue-100 text-blue-600 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400'}`}>
@@ -165,16 +165,16 @@ function MyGrades() {
                                                         <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${type === 'quiz' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
                                                             {type === 'quiz' ? 'Тест' : 'Завдання'}
                                                         </span>
-                                                        <span className="text-xs font-semibold text-gray-400 dark:text-gray-500">
+                                                        <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">
                                                             {date ? new Date(date).toLocaleDateString('uk-UA') : 'Дату не вказано'}
                                                         </span>
                                                     </div>
-                                                    <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{title}</h4>
+                                                    <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">{title}</h4>
                                                     
                                                     {grade.feedback && (
-                                                        <div className="inline-flex items-start gap-2 mt-1 bg-gray-50 dark:bg-gray-800/40 px-3 py-2 rounded-xl border border-gray-100 dark:border-gray-700/50">
-                                                            <svg className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-                                                            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium italic">«{grade.feedback}»</p>
+                                                        <div className="inline-flex items-start gap-2 mt-1 bg-zinc-50 dark:bg-zinc-800/40 px-3 py-2 rounded-xl border border-zinc-100 dark:border-zinc-700/50">
+                                                            <svg className="w-4 h-4 text-zinc-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                                                            <p className="text-sm text-zinc-600 dark:text-zinc-400 font-medium italic">«{grade.feedback}»</p>
                                                         </div>
                                                     )}
                                                 </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function CommentSection({ assignmentId, comments, currentUser, isOpen, onToggle, onCommentSubmit }) {
+const CommentSection = ({ assignmentId, comments, currentUser, isOpen, onToggle, onCommentSubmit }) => {
     const [text, setText] = useState('');
 
     const handleSubmit = (e) => {
@@ -11,80 +11,92 @@ function CommentSection({ assignmentId, comments, currentUser, isOpen, onToggle,
     };
 
     return (
-        <>
+        <div className="border-t border-zinc-100 dark:border-zinc-800">
+            {/* Кнопка розгортання */}
             <button 
-                onClick={() => onToggle(assignmentId)}
-                className="w-full px-6 py-4 flex items-center justify-between bg-gray-50/50 border-t border-gray-100 hover:bg-gray-100 transition-colors focus:outline-none"
+                onClick={() => onToggle(assignmentId)} 
+                className="w-full py-4 px-8 flex items-center justify-between text-sm font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors focus:outline-none"
             >
-                <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
-                    Коментарі класу ({comments.length})
+                <span className="flex items-center gap-2.5">
+                    <svg className="w-5 h-5 text-zinc-400 dark:text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    Обговорення завдання 
+                    {comments.length > 0 && (
+                        <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-2 py-0.5 rounded-full text-xs border border-zinc-200 dark:border-zinc-700">
+                            {comments.length}
+                        </span>
+                    )}
                 </span>
-                <svg className={`w-5 h-5 text-gray-400 transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                <svg className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
             </button>
-
+            
+            {/* Зона коментарів */}
             {isOpen && (
-                <div className="px-6 py-6 border-t border-gray-100 bg-gray-50/30">
-                    <div className="space-y-0 mb-6 border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm">
+                <div className="p-6 sm:p-8 bg-zinc-50/50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-800/50">
+                    <div className="space-y-6 mb-6 max-h-87.5 overflow-y-auto custom-scrollbar pr-2">
                         {comments.length === 0 ? (
-                            <div className="p-6 text-center text-sm text-gray-500">
-                                Поки немає коментарів. Задайте питання першим!
-                            </div>
+                            <p className="text-center text-sm text-zinc-500 dark:text-zinc-500 py-6 font-medium">Ще немає коментарів. Будьте першим!</p>
                         ) : (
                             comments.map((comment, index) => {
+                                // Перевіряємо, чи це наше повідомлення
                                 const isMe = comment.user_id === currentUser.id;
-                                const isLast = index === comments.length - 1;
+                                const isTeacher = comment.user_role === 'teacher' || comment.user_role === 'admin';
                                 
                                 return (
-                                    <div key={comment.id} className={`flex gap-4 p-5 hover:bg-gray-50/50 transition-colors ${!isLast ? 'border-b border-gray-100' : ''}`}>
-                                        <div className="shrink-0 mt-1">
-                                            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border ${comment.user_role === 'teacher' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-gray-100 text-gray-700 border-gray-200'}`}>
-                                                {comment.user_name.charAt(0)}
-                                            </div>
+                                    <div key={comment.id || index} className={`flex gap-3 sm:gap-4 ${isMe ? 'flex-row-reverse' : ''}`}>
+                                        
+                                        {/* Аватарка */}
+                                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 text-xs sm:text-sm font-bold shadow-sm ${isTeacher ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50' : 'bg-white border border-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300'}`}>
+                                            {comment.user_name?.charAt(0).toUpperCase()}
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center flex-wrap gap-2 mb-1">
-                                                <span className="text-sm font-bold text-gray-900">{isMe ? 'Ви' : comment.user_name}</span>
-                                                {comment.user_role === 'teacher' && (
-                                                    <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100">Викладач</span>
-                                                )}
-                                                <span className="text-xs text-gray-400 ml-auto">
-                                                    {new Date(comment.created_at).toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' })}
-                                                </span>
+                                        
+                                        {/* Бульбашка тексту */}
+                                        <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-[75%]`}>
+                                            <div className="flex items-baseline gap-2 mb-1.5 px-1">
+                                                <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">{isMe ? 'Ви' : comment.user_name}</span>
+                                                {isTeacher && !isMe && <span className="text-[9px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">Викладач</span>}
+                                                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">{new Date(comment.created_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}</span>
                                             </div>
-                                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap wrap-break-word">{comment.text}</p>
+                                            
+                                            <div className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-sm leading-relaxed ${
+                                                isMe 
+                                                ? 'bg-blue-600 text-white rounded-tr-sm shadow-md shadow-blue-600/20 dark:shadow-none' 
+                                                : 'bg-white dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-800 dark:text-zinc-200 rounded-tl-sm shadow-sm dark:shadow-none'
+                                            }`}>
+                                                {comment.text}
+                                            </div>
                                         </div>
                                     </div>
                                 );
                             })
                         )}
                     </div>
-
-                    <form onSubmit={handleSubmit} className="flex gap-4 items-start">
-                        <div className="hidden sm:flex w-9 h-9 mt-1 shrink-0 rounded-full bg-blue-50 items-center justify-center text-sm font-bold text-blue-700 border border-blue-100">
-                            {currentUser.name.charAt(0)}
+                    
+                    {/* Форма вводу */}
+                    <form onSubmit={handleSubmit} className="flex gap-3 relative mt-2">
+                        <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 text-sm font-bold text-zinc-600 dark:text-zinc-300 shadow-sm">
+                            {currentUser?.name?.charAt(0).toUpperCase()}
                         </div>
-                        <div className="flex-1">
-                            <textarea 
+                        <div className="flex-1 relative flex items-center">
+                            <input 
+                                type="text" 
                                 value={text}
-                                onChange={(e) => setText(e.target.value)}
-                                placeholder="Додати коментар для всього класу..." 
-                                required 
-                                rows="2"
-                                className="w-full px-4 py-3 text-sm text-gray-900 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors resize-none shadow-sm" 
+                                onChange={e => setText(e.target.value)}
+                                placeholder="Написати повідомлення..." 
+                                className="w-full px-5 py-3.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-600/50 focus:border-blue-600 dark:focus:border-blue-500 transition-all pr-14 text-sm shadow-sm dark:shadow-none"
                             />
-                            <div className="flex justify-end mt-2">
-                                <button type="submit" className="px-5 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm inline-flex items-center gap-2">
-                                    <span>Надіслати</span>
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                                </button>
-                            </div>
+                            <button 
+                                type="submit"
+                                disabled={!text.trim()}
+                                className="absolute right-2 p-2 bg-blue-600 text-white rounded-xl disabled:opacity-0 disabled:scale-75 transition-all duration-200 hover:bg-blue-700 shadow-md shadow-blue-600/20"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                            </button>
                         </div>
                     </form>
                 </div>
             )}
-        </>
+        </div>
     );
-}
+};
 
 export default CommentSection;
