@@ -34,11 +34,40 @@ router.put('/users/:id/role', authMiddleware, adminMiddleware, async (req, res) 
 router.delete('/users/:id', authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
+
+        const userCheck = await db.query('SELECT role FROM users WHERE id = $1', [id]);
+        
+        if (userCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Користувача не знайдено' });
+        }
+
+        if (userCheck.rows[0].role === 'admin') {
+            return res.status(403).json({ error: 'Неможливо видалити адміністратора' });
+        }
+
         await db.query('DELETE FROM users WHERE id = $1', [id]);
         res.json({ message: 'Користувача та всі його дані успішно видалено' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Помилка при видаленні користувача' });
+    }
+});
+
+router.delete('/courses/:id', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const courseCheck = await db.query('SELECT id FROM courses WHERE id = $1', [id]);
+        
+        if (courseCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Курс не знайдено' });
+        }
+
+        await db.query('DELETE FROM courses WHERE id = $1', [id]);
+        res.json({ message: 'Курс успішно видалено' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Помилка при видаленні курсу' });
     }
 });
 

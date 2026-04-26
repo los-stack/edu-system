@@ -1,4 +1,10 @@
 require('dotenv').config();
+
+if (!process.env.JWT_SECRET) {
+    console.error('FATAL ERROR: JWT_SECRET is not defined in the environment variables.');
+    process.exit(1); 
+}
+
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
@@ -6,10 +12,12 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 
 const app = express();
+
 app.use(cors({
     origin: 'http://localhost:5173', 
     credentials: true               
 }));
+
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

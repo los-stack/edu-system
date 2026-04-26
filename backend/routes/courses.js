@@ -15,7 +15,34 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({ storage });
+const upload = multer({ 
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt', '.zip', '.rar', '.png', '.jpg', '.jpeg'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        
+        if (allowedExtensions.includes(ext)) {
+            return cb(null, true);
+        }
+        cb(new Error('INVALID_FILE_TYPE'));
+    }
+});
+
+const handleUpload = (req, res, next) => {
+    upload.single('file')(req, res, (err) => {
+        if (err) {
+            if (err.message === 'INVALID_FILE_TYPE') {
+                return res.status(400).json({ error: 'Недопустимий тип файлу. Дозволені формати: PDF, DOC, TXT, ZIP, RAR, PNG, JPG.' });
+            }
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({ error: 'Файл занадто великий. Максимальний розмір: 10 МБ.' });
+            }
+            return res.status(400).json({ error: 'Помилка при завантаженні файлу.' });
+        }
+        next();
+    });
+};
 
 router.get('/', authMiddleware, async (req, res) => {
     try {
@@ -99,7 +126,7 @@ router.post('/:id/enroll', authMiddleware, async (req, res) => {
     }
 });
 
-router.post('/:id/assignments', authMiddleware, roleMiddleware, upload.single('file'), async (req, res) => {
+router.post('/:id/assignments', authMiddleware, roleMiddleware, handleUpload, async (req, res) => {
     try {
         const courseId = req.params.id;
         const { title, description, due_date } = req.body;
@@ -134,7 +161,7 @@ router.post('/:id/assignments', authMiddleware, roleMiddleware, upload.single('f
                 await Promise.all(notificationQueries);
             }
         } catch (notifErr) {
-            console.error('Помилка розсилки сповіщень студентам:', notifErr);
+            console.error(notifErr);
         }
 
         res.status(201).json({
@@ -192,8 +219,8 @@ router.get('/:id/submissions', authMiddleware, async (req, res) => {
                 s.student_id, 
                 s.file_url, 
                 u.name AS student_name,
-                g.score,       -- Підтягуємо бал
-                g.feedback     -- Підтягуємо коментар викладача
+                g.score,
+                g.feedback
             FROM submissions s
             JOIN assignments a ON s.assignment_id = a.id
             JOIN users u ON s.student_id = u.id
@@ -287,7 +314,7 @@ router.get('/:id/analytics', authMiddleware, async (req, res) => {
             cohortProgress 
         });
     } catch (error) {
-        console.error('Помилка аналітики:', error);
+        console.error(error);
         res.status(500).json({ error: 'Помилка при формуванні аналітики' });
     }
 });

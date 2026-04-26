@@ -48,24 +48,26 @@ function AdminDashboard() {
     }, [users, courses]);
 
     const handleDeleteUser = async (userId, userName) => {
-        if (!window.confirm(`Ви впевнені, що хочете видалити користувача ${userName}?`)) return;
+        if (!window.confirm(`Ви впевнені, що хочете видалити користувача ${userName}? Всі його дані будуть втрачені.`)) return;
         try {
+            await axios.delete(`/api/admin/users/${userId}`); 
             setUsers(users.filter(u => u.id !== userId));
             toast.success('Користувача видалено');
         } catch (err) {
             console.error('Delete User Error:', err);
-            toast.error('Помилка видалення користувача');
+            toast.error(err.response?.data?.error || 'Помилка видалення користувача');
         }
     };
 
     const handleDeleteCourse = async (courseId, courseTitle) => {
-        if (!window.confirm(`Ви впевнені, що хочете видалити курс "${courseTitle}"?`)) return;
+        if (!window.confirm(`Ви впевнені, що хочете видалити курс "${courseTitle}"? Всі завдання та результати будуть видалені.`)) return;
         try {
+            await axios.delete(`/api/admin/courses/${courseId}`);
             setCourses(courses.filter(c => c.id !== courseId));
             toast.success('Курс видалено');
         } catch (err) {
             console.error('Delete Course Error:', err);
-            toast.error('Помилка видалення курсу');
+            toast.error(err.response?.data?.error || 'Помилка видалення курсу');
         }
     };
 
