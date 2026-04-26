@@ -138,6 +138,9 @@ router.post('/:quizId/submit', authMiddleware, async (req, res) => {
         );
 
         try {
+            const userQuery = await db.query('SELECT name FROM users WHERE id = $1', [studentId]);
+            const studentName = userQuery.rows[0].name;
+
             const quizInfoRes = await db.query(`
                 SELECT q.title, c.id as course_id, c.teacher_id 
                 FROM quizzes q 
@@ -147,7 +150,7 @@ router.post('/:quizId/submit', authMiddleware, async (req, res) => {
 
             if (quizInfoRes.rows.length > 0) {
                 const { title, course_id, teacher_id } = quizInfoRes.rows[0];
-                const message = `Студент ${req.user.name} здав тест "${title}" на ${score}/100`;
+                const message = `Студент ${studentName} здав тест "${title}" на ${score}/100`;
                 
                 await db.query(
                     'INSERT INTO notifications (user_id, message, type, link) VALUES ($1, $2, $3, $4)',

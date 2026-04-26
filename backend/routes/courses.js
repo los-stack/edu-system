@@ -3,42 +3,15 @@ const router = express.Router();
 const db = require('../config/db');
 const authMiddleware = require('../middlewares/authMiddleware'); 
 const roleMiddleware = require('../middlewares/roleMiddleware'); 
-const multer = require('multer');
-const path = require('path');
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/'); 
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
-});
-
-const upload = multer({ 
-    storage,
-    limits: { fileSize: 10 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
-        const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt', '.zip', '.rar', '.png', '.jpg', '.jpeg'];
-        const ext = path.extname(file.originalname).toLowerCase();
-        
-        if (allowedExtensions.includes(ext)) {
-            return cb(null, true);
-        }
-        cb(new Error('INVALID_FILE_TYPE'));
-    }
-});
+const { uploadCloud } = require('../config/cloudinary'); 
 
 const handleUpload = (req, res, next) => {
-    upload.single('file')(req, res, (err) => {
+    uploadCloud.single('file')(req, res, (err) => {
         if (err) {
-            if (err.message === 'INVALID_FILE_TYPE') {
-                return res.status(400).json({ error: 'Недопустимий тип файлу. Дозволені формати: PDF, DOC, TXT, ZIP, RAR, PNG, JPG.' });
-            }
             if (err.code === 'LIMIT_FILE_SIZE') {
                 return res.status(400).json({ error: 'Файл занадто великий. Максимальний розмір: 10 МБ.' });
             }
-            return res.status(400).json({ error: 'Помилка при завантаженні файлу.' });
+            return res.status(400).json({ error: 'Помилка при завантаженні файлу в хмару.' });
         }
         next();
     });
@@ -131,7 +104,7 @@ router.post('/:id/assignments', authMiddleware, roleMiddleware, handleUpload, as
         const courseId = req.params.id;
         const { title, description, due_date } = req.body;
         
-        const fileUrl = req.file ? `/uploads/${req.file.filename}` : null;
+        const fileUrl = req.file ? req.file.path : null;
 
         const courseCheck = await db.query('SELECT * FROM courses WHERE id = $1', [courseId]);
         if (courseCheck.rows.length === 0) {

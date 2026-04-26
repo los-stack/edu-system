@@ -3,16 +3,22 @@ const router = express.Router();
 const db = require('../config/db');
 const authMiddleware = require('../middlewares/authMiddleware');
 const roleMiddleware = require('../middlewares/roleMiddleware');
-const multer = require('multer');
-const path = require('path');
+const { uploadCloud } = require('../config/cloudinary');
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
-    filename: (req, file, cb) => cb(null, 'student-' + Date.now() + path.extname(file.originalname))
-});
-const upload = multer({ storage });
+const handleUpload = (req, res, next) => {
+    uploadCloud.single('file')(req, res, (err) => {
+        if (err) {
+            console.error('Помилка завантаження Cloudinary:', err);
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({ error: 'Файл занадто великий. Максимальний розмір: 10 МБ.' });
+            }
+            return res.status(400).json({ error: err.message || 'Помилка при завантаженні файлу.' });
+        }
+        next();
+    });
+};
 
-router.post('/:id/submit', authMiddleware, upload.single('file'), async (req, res) => {
+router.post('/:id/submit', authMiddleware, handleUpload, async (req, res) => {
     try {
         const assignmentId = req.params.id;
         const studentId = req.user.id;
@@ -21,19 +27,31 @@ router.post('/:id/submit', authMiddleware, upload.single('file'), async (req, re
             return res.status(403).json({ error: 'Тільки студенти можуть здавати роботи.' });
         }
         if (!req.file) {
-            return res.status(400).json({ error: 'Файл не вибрано.' });
+            return res.status(400).json({ error: 'Файл не вибрано або формат не підтримується.' });
         }
 
-        const fileUrl = `/uploads/${req.file.filename}`;
+        const fileUrl = req.file.path; 
 
-        const query = `
-            INSERT INTO submissions (assignment_id, student_id, file_url) 
-            VALUES ($1, $2, $3)
-            ON CONFLICT (assignment_id, student_id) 
-            DO UPDATE SET file_url = EXCLUDED.file_url, submitted_at = CURRENT_TIMESTAMP
-            RETURNING *;
-        `;
-        const result = await db.query(query, [assignmentId, studentId, fileUrl]);
+        const existing = await db.query(
+            'SELECT * FROM submissions WHERE assignment_id = $1 AND student_id = $2',
+            [assignmentId, studentId]
+        );
+
+        let result;
+        if (existing.rows.length > 0) {
+            result = await db.query(
+                'UPDATE submissions SET file_url = $1, submitted_at = CURRENT_TIMESTAMP WHERE assignment_id = $2 AND student_id = $3 RETURNING *',
+                [fileUrl, assignmentId, studentId]
+            );
+        } else {
+            result = await db.query(
+                'INSERT INTO submissions (assignment_id, student_id, file_url) VALUES ($1, $2, $3) RETURNING *',
+                [assignmentId, studentId, fileUrl]
+            );
+        }
+        
+        const userQuery = await db.query('SELECT name FROM users WHERE id = $1', [studentId]);
+        const studentName = userQuery.rows[0].name;
         
         const courseQuery = await db.query(`
             SELECT c.id as course_id, c.teacher_id, a.title 
@@ -44,7 +62,7 @@ router.post('/:id/submit', authMiddleware, upload.single('file'), async (req, re
 
         if (courseQuery.rows.length > 0) {
             const { course_id, teacher_id, title } = courseQuery.rows[0];
-            const message = `Студент ${req.user.name} здав роботу: "${title}"`;
+            const message = `Студент ${studentName} здав роботу: "${title}"`;
             
             await db.query(
                 'INSERT INTO notifications (user_id, message, type, link) VALUES ($1, $2, $3, $4)',
@@ -54,8 +72,8 @@ router.post('/:id/submit', authMiddleware, upload.single('file'), async (req, re
 
         res.json({ message: 'Роботу успішно завантажено!', submission: result.rows[0] });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Помилка при завантаженні роботи.' });
+        console.error('Помилка бази даних у /submit:', err);
+        res.status(500).json({ error: 'Помилка при збереженні роботи в базу.' });
     }
 });
 
