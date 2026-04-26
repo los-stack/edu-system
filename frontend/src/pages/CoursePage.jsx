@@ -28,6 +28,7 @@ function CoursePage() {
     const [selectedQuizForResults, setSelectedQuizForResults] = useState(null);
     const [openComments, setOpenComments] = useState([]);
     
+    // СТАН ДЛЯ ФАЙЛІВ СТУДЕНТА
     const [selectedFiles, setSelectedFiles] = useState({});
 
     useEffect(() => {
@@ -139,7 +140,7 @@ function CoursePage() {
             });
 
             toast.promise(promise, {
-                loading: 'Завантаження...',
+                loading: 'Завантаження у хмару...',
                 success: 'Роботу успішно здано!',
                 error: (err) => err.response?.data?.error || 'Помилка завантаження'
             });
@@ -215,14 +216,40 @@ function CoursePage() {
                     </div>
 
                     {user.role === 'student' && (
-                        <div className="w-full md:w-64 bg-zinc-50 dark:bg-zinc-800/40 p-6 rounded-3xl border border-zinc-100 dark:border-zinc-700/50 backdrop-blur-sm shrink-0">
+                        <div className="w-full md:w-72 bg-zinc-50 dark:bg-zinc-800/40 p-6 rounded-3xl border border-zinc-100 dark:border-zinc-700/50 backdrop-blur-sm shrink-0 flex flex-col justify-center">
                             <div className="flex justify-between items-end mb-3">
                                 <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">Прогрес</span>
                                 <span className="text-xl font-black text-blue-600 dark:text-blue-400">{progressPercentage}%</span>
                             </div>
-                            <div className="w-full bg-zinc-200 dark:bg-zinc-700 h-2 rounded-full overflow-hidden">
+                            <div className="w-full bg-zinc-200 dark:bg-zinc-700 h-2 rounded-full overflow-hidden mb-4">
                                 <div className="bg-blue-600 h-2 rounded-full transition-all duration-1000" style={{ width: `${progressPercentage}%` }}></div>
                             </div>
+                            
+                            {progressPercentage === 100 && (
+                                <button 
+                                    onClick={async () => {
+                                        const loadingToast = toast.loading('Генеруємо сертифікат...');
+                                        try {
+                                            const response = await axios.get(`/api/courses/${course.id}/certificate`, { responseType: 'blob' });
+                                            const url = window.URL.createObjectURL(new Blob([response.data]));
+                                            const link = document.createElement('a');
+                                            link.href = url;
+                                            link.setAttribute('download', `Сертифікат_${course.title}.pdf`);
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            link.parentNode.removeChild(link);
+                                            toast.success('Сертифікат завантажено!', { id: loadingToast });
+                                        } catch (error) {
+                                            console.error(error);
+                                            toast.error('Помилка генерації сертифіката', { id: loadingToast });
+                                        }
+                                    }}
+                                    className="w-full py-3 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-black rounded-xl shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                                    ОТРИМАТИ СЕРТИФІКАТ
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
@@ -259,7 +286,7 @@ function CoursePage() {
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">Тести</h2>
                                 {(user.role === 'teacher' || user.role === 'admin') && (
-                                    <button onClick={() => setIsQuizModalOpen(true)} className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20">
+                                    <button onClick={() => setIsQuizModalOpen(true)} className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-50 transition-colors shadow-lg shadow-blue-500/20">
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
                                     </button>
                                 )}

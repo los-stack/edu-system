@@ -292,4 +292,81 @@ router.get('/:id/analytics', authMiddleware, async (req, res) => {
     }
 });
 
+const PDFDocument = require('pdfkit');
+const axios = require('axios');
+
+router.get('/:id/certificate', authMiddleware, async (req, res) => {
+    try {
+        const courseId = req.params.id;
+        const studentId = req.user.id;
+
+        if (req.user.role !== 'student') {
+            return res.status(403).json({ error: 'Сертифікати доступні лише студентам.' });
+        }
+
+        const courseRes = await db.query('SELECT title FROM courses WHERE id = $1', [courseId]);
+        if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Курс не знайдено.' });
+        const courseTitle = courseRes.rows[0].title;
+
+        const userQuery = await db.query('SELECT name FROM users WHERE id = $1', [studentId]);
+        const studentName = userQuery.rows[0]?.name || 'Студент';
+
+        const doc = new PDFDocument({ layout: 'landscape', size: 'A4', margin: 0 });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=Certificate_${encodeURIComponent(courseTitle)}.pdf`);
+        doc.pipe(res);
+
+        const fontRegular = await axios.get('https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Regular.ttf', { responseType: 'arraybuffer' });
+        const fontBold = await axios.get('https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Bold.ttf', { responseType: 'arraybuffer' });
+        
+        doc.registerFont('Roboto-Regular', fontRegular.data);
+        doc.registerFont('Roboto-Bold', fontBold.data);
+
+        doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40).lineWidth(4).stroke('#2563eb');
+        doc.rect(26, 26, doc.page.width - 52, doc.page.height - 52).lineWidth(1).stroke('#94a3b8');
+
+        doc.font('Roboto-Bold').fontSize(20).fillColor('#2563eb').text('EPlatform', 50, 50, { align: 'left' });
+
+        const centerXOptions = { align: 'center', width: doc.page.width };
+
+        doc.font('Roboto-Bold').fontSize(45).fillColor('#0f172a').text('СЕРТИФІКАТ', 0, 130, centerXOptions);
+        doc.font('Roboto-Regular').fontSize(16).fillColor('#64748b').text('ПРО УСПІШНЕ ПРОХОДЖЕННЯ КУРСУ', 0, 185, { ...centerXOptions, characterSpacing: 2 });
+        
+        doc.font('Roboto-Regular').fontSize(18).fillColor('#334155').text('Цим підтверджується, що', 0, 250, centerXOptions);
+        
+        doc.font('Roboto-Bold').fontSize(40).fillColor('#2563eb').text(studentName, 0, 285, centerXOptions);
+        
+        doc.font('Roboto-Regular').fontSize(18).fillColor('#334155').text('успішно завершив(ла) навчання за програмою курсу', 0, 350, centerXOptions);
+        
+        doc.font('Roboto-Bold').fontSize(26).fillColor('#0f172a').text(`«${courseTitle}»`, 0, 385, centerXOptions);
+
+        const bottomY = 490;
+        const footerLineLength = 200;
+        const leftFooterX = 80;
+        const rightFooterX = doc.page.width - 80 - footerLineLength;
+
+        doc.font('Roboto-Regular').fontSize(14).fillColor('#64748b');
+        
+        const currentDate = new Date().toLocaleDateString('uk-UA');
+        const certId = `ID: EP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+        doc.text('Дата видачі:', leftFooterX, bottomY);
+        doc.font('Roboto-Bold').text(currentDate, leftFooterX + 85, bottomY);
+        doc.moveTo(leftFooterX, bottomY + 20).lineTo(leftFooterX + footerLineLength, bottomY + 20).lineWidth(1).stroke('#cbd5e1');
+        
+        doc.font('Roboto-Regular').text(certId, leftFooterX, bottomY + 30);
+
+        doc.moveTo(rightFooterX, bottomY + 20).lineTo(rightFooterX + footerLineLength, bottomY + 20).lineWidth(1).stroke('#cbd5e1');
+        doc.text('Підпис викладача', rightFooterX, bottomY + 25, { align: 'center', width: footerLineLength }); 
+
+        doc.end();
+    } catch (error) {
+        console.error(error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Помилка при генерації сертифіката' });
+        }
+    }
+});
+
 module.exports = router;
