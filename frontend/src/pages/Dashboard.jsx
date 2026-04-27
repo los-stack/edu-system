@@ -19,7 +19,6 @@ const CreateCourseModal = ({ isOpen, onClose, onCreate }) => {
     };
 
     return (
-        /* ВИПРАВЛЕНО: Прибрано backdrop-blur-sm, додано bg-zinc-900/80 для швидкодії */
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/80 p-4 sm:p-6 overflow-y-auto">
             <div className="bg-white dark:bg-zinc-900 shadow-2xl dark:shadow-none dark:border dark:border-zinc-800 rounded-3xl w-full max-w-2xl overflow-hidden transform transition-all flex flex-col max-h-full my-auto">
                 <div className="px-8 py-6 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0">
@@ -37,7 +36,6 @@ const CreateCourseModal = ({ isOpen, onClose, onCreate }) => {
                         <div>
                             <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Опис курсу</label>
                             <div className="rounded-xl overflow-hidden bg-zinc-50 dark:bg-zinc-800 dark:border dark:border-zinc-700">
-                                {/* ВИПРАВЛЕНО: Звичайний Quill без зайвих кешувань */}
                                 <ReactQuill theme="snow" value={description} onChange={setDescription} placeholder="Про що цей курс..." />
                             </div>
                         </div>
@@ -143,7 +141,7 @@ function Dashboard() {
     return (
         <div className="w-full relative mt-2">
             
-            <div className="relative bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 sm:p-12 mb-12 shadow-xl shadow-zinc-200/40 dark:shadow-none dark:border dark:border-zinc-800 overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+            <div className="relative bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-100 dark:border-zinc-800 p-8 sm:p-12 mb-12 shadow-xl shadow-zinc-200/50 dark:shadow-none overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-4">
                         <span className="px-3 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-blue-50 text-blue-600 dark:bg-blue-600/10 dark:text-blue-400">
@@ -179,7 +177,7 @@ function Dashboard() {
             {user.role === 'student' && (urgentDeadlines.length > 0 || deadlines.length > 0) && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
                     {urgentDeadlines.length > 0 && (
-                        <div className="p-8 bg-red-50/50 dark:bg-zinc-900 rounded-4xl flex flex-col justify-center shadow-lg shadow-red-100/50 dark:shadow-none dark:border dark:border-red-900/30">
+                        <div className="p-8 bg-red-50/50 dark:bg-zinc-900 rounded-4xl border border-red-100 dark:border-red-900/30 flex flex-col justify-center shadow-lg shadow-red-200/50 dark:shadow-none">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center text-red-600 dark:text-red-400">
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
@@ -190,7 +188,7 @@ function Dashboard() {
                         </div>
                     )}
                     {deadlines.length > 0 && (
-                        <div className="p-8 bg-white dark:bg-zinc-900 rounded-4xl shadow-xl shadow-zinc-200/40 dark:shadow-none dark:border dark:border-zinc-800">
+                        <div className="p-8 bg-white dark:bg-zinc-900 rounded-4xl border border-zinc-100 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-none">
                             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-4 flex items-center gap-2 uppercase tracking-wider">
                                 <span className="w-2 h-2 rounded-full bg-blue-600"></span>
                                 Наближаються дедлайни
@@ -229,7 +227,7 @@ function Dashboard() {
             </div>
             
             {displayCourses.length === 0 ? (
-                <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-lg shadow-zinc-200/30 dark:shadow-none dark:border dark:border-zinc-800">
+                <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-100 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-none">
                     <div className="w-16 h-16 mx-auto bg-zinc-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
                         <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                     </div>
@@ -248,7 +246,7 @@ function Dashboard() {
                             : 0;
 
                         return (
-                            <div key={course.id || `course-${index}`} className="group flex flex-col bg-white dark:bg-zinc-900 rounded-3xl transition-all duration-300 shadow-xl shadow-zinc-200/40 hover:shadow-2xl hover:shadow-zinc-200/60 dark:shadow-none dark:border dark:border-zinc-800 dark:hover:border-zinc-700 hover:-translate-y-1 overflow-hidden relative">
+                            <div key={course.id || `course-${index}`} className="group flex flex-col bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-100 dark:border-zinc-800 transition-all duration-300 shadow-xl shadow-zinc-200/50 hover:shadow-2xl hover:shadow-zinc-200/80 dark:shadow-none dark:hover:border-zinc-700 hover:-translate-y-1 overflow-hidden relative">
                                 
                                 {isEnrolled && (
                                     <div className="h-1.5 w-full bg-blue-600 absolute top-0 left-0"></div>
