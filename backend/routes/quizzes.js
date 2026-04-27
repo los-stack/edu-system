@@ -19,16 +19,21 @@ router.post('/course/:courseId', authMiddleware, async (req, res) => {
         const quizId = quizRes.rows[0].id;
 
         for (let q of questions) {
+            const questionText = q.question_text || '';
+
             const qRes = await db.query(
                 'INSERT INTO questions (quiz_id, question_text) VALUES ($1, $2) RETURNING id',
-                [quizId, q.text]
+                [quizId, questionText]
             );
             const questionId = qRes.rows[0].id;
 
-            for (let opt of q.options) {
+            for (let i = 0; i < q.options.length; i++) {
+                const answerText = q.options[i];
+                const isCorrect = (i === q.correct_option_index);
+
                 await db.query(
                     'INSERT INTO answers (question_id, answer_text, is_correct) VALUES ($1, $2, $3)',
-                    [questionId, opt.text, opt.isCorrect]
+                    [questionId, answerText, isCorrect]
                 );
             }
         }
@@ -97,8 +102,17 @@ router.get('/:quizId', authMiddleware, async (req, res) => {
         );
 
         const fullQuestions = questions.map(q => ({
-            ...q,
-            options: aRes.rows.filter(a => a.question_id === q.id)
+            id: q.id,
+            text: q.question_text, 
+            question_text: q.question_text,
+            options: aRes.rows
+                .filter(a => a.question_id === q.id)
+                .map(a => ({
+                    id: a.id,
+                    question_id: a.question_id,
+                    text: a.answer_text, 
+                    answer_text: a.answer_text
+                }))
         }));
 
         res.json({ ...quiz, questions: fullQuestions });
