@@ -4,6 +4,8 @@ const db = require('../config/db');
 const authMiddleware = require('../middlewares/authMiddleware'); 
 const roleMiddleware = require('../middlewares/roleMiddleware'); 
 const { uploadCloud } = require('../config/cloudinary'); 
+const PDFDocument = require('pdfkit');
+const axios = require('axios');
 
 const handleUpload = (req, res, next) => {
     uploadCloud.single('file')(req, res, (err) => {
@@ -292,8 +294,6 @@ router.get('/:id/analytics', authMiddleware, async (req, res) => {
     }
 });
 
-const PDFDocument = require('pdfkit');
-const axios = require('axios');
 
 router.get('/:id/certificate', authMiddleware, async (req, res) => {
     try {
@@ -304,6 +304,35 @@ router.get('/:id/certificate', authMiddleware, async (req, res) => {
             return res.status(403).json({ error: 'Сертифікати доступні лише студентам.' });
         }
 
+        const progressRes = await db.query(`
+            WITH course_totals AS (
+                SELECT 
+                    (SELECT COUNT(*) FROM assignments WHERE course_id = $1) AS total_assignments,
+                    (SELECT COUNT(*) FROM quizzes WHERE course_id = $1) AS total_quizzes
+            ),
+            student_completed AS (
+                SELECT 
+                    (SELECT COUNT(*) FROM submissions s 
+                     JOIN assignments a ON s.assignment_id = a.id 
+                     LEFT JOIN grades g ON g.assignment_id = s.assignment_id AND g.student_id = s.student_id
+                     WHERE a.course_id = $1 AND s.student_id = $2 AND g.score IS NOT NULL) AS graded_assignments,
+                    
+                    (SELECT COUNT(*) FROM quiz_results qr 
+                     JOIN quizzes q ON qr.quiz_id = q.id 
+                     WHERE q.course_id = $1 AND qr.student_id = $2) AS completed_quizzes
+            )
+            SELECT * FROM course_totals CROSS JOIN student_completed;
+        `, [courseId, studentId]);
+
+        const progressData = progressRes.rows[0];
+        const totalTasks = parseInt(progressData.total_assignments) + parseInt(progressData.total_quizzes);
+        const completedTasks = parseInt(progressData.graded_assignments) + parseInt(progressData.completed_quizzes);
+
+        if (totalTasks === 0 || completedTasks < totalTasks) {
+            return res.status(403).json({ error: 'Сертифікат недоступний. Виконайте всі завдання та отримайте за них оцінки.' });
+        }
+
+        // Якщо перевірка пройдена — продовжуємо генерацію
         const courseRes = await db.query('SELECT title FROM courses WHERE id = $1', [courseId]);
         if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Курс не знайдено.' });
         const courseTitle = courseRes.rows[0].title;

@@ -140,7 +140,7 @@ function CoursePage() {
 
             toast.promise(promise, {
                 loading: 'Завантаження у хмару...',
-                success: 'Роботу успішно здано!',
+                success: 'Роботу успішно здано! Очікуйте перевірки.',
                 error: (err) => err.response?.data?.error || 'Помилка завантаження'
             });
 
@@ -194,7 +194,12 @@ function CoursePage() {
     let progressPercentage = 0;
     if (user.role === 'student') {
         const total = assignments.length + quizzes.length;
-        const completed = assignments.filter(a => submissionsMap[a.id]?.some(s => s.student_id === user.id)).length + myQuizResults.length;
+        const completedAssignments = assignments.filter(a => {
+            const sub = submissionsMap[a.id]?.find(s => s.student_id === user.id);
+            return sub && sub.score !== null && sub.score !== undefined;
+        }).length;
+        
+        const completed = completedAssignments + myQuizResults.length;
         progressPercentage = total === 0 ? 0 : Math.round((completed / total) * 100);
     }
 
@@ -240,7 +245,7 @@ function CoursePage() {
                                             toast.success('Сертифікат завантажено!', { id: loadingToast });
                                         } catch (error) {
                                             console.error(error);
-                                            toast.error('Помилка генерації сертифіката', { id: loadingToast });
+                                            toast.error(error.response?.data?.error || 'Помилка генерації сертифіката', { id: loadingToast });
                                         }
                                     }}
                                     className="w-full py-3 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-black rounded-xl shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
@@ -357,7 +362,11 @@ function CoursePage() {
                                                                 </div>
                                                                 <div>
                                                                     <p className="text-sm font-bold text-zinc-900 dark:text-white">{mySub ? 'Роботу здано' : 'Роботу не здано'}</p>
-                                                                    {mySub?.score !== null && mySub?.score !== undefined && <p className="text-xs font-bold text-green-600 dark:text-green-400">Оцінка: {mySub.score}/100</p>}
+                                                                    {mySub?.score !== null && mySub?.score !== undefined ? (
+                                                                        <p className="text-xs font-bold text-green-600 dark:text-green-400">Оцінка: {mySub.score}/100</p>
+                                                                    ) : mySub ? (
+                                                                        <p className="text-xs font-bold text-amber-500 dark:text-amber-400">Очікує перевірки викладачем</p>
+                                                                    ) : null}
                                                                 </div>
                                                             </div>
                                                             
