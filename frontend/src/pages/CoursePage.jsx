@@ -28,7 +28,6 @@ function CoursePage() {
     const [selectedQuizForResults, setSelectedQuizForResults] = useState(null);
     const [openComments, setOpenComments] = useState([]);
     
-    // СТАН ДЛЯ ФАЙЛІВ СТУДЕНТА
     const [selectedFiles, setSelectedFiles] = useState({});
 
     useEffect(() => {
@@ -202,7 +201,7 @@ function CoursePage() {
     return (
         <div className="max-w-7xl mx-auto pb-20 px-4 sm:px-6 lg:px-8 mt-4">
             
-            <div className="relative bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 sm:p-12 mb-10 border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/40 dark:shadow-none overflow-hidden">
+            <div className="relative bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 sm:p-12 mb-10 border border-zinc-100 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-none overflow-hidden">
                 <div className="absolute top-0 right-0 w-150 h-150 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
                 
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
@@ -295,7 +294,7 @@ function CoursePage() {
                                 {quizzes.map(quiz => {
                                     const myResult = myQuizResultsMap[quiz.id];
                                     return (
-                                        <div key={quiz.id} className="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/40 dark:shadow-none hover:shadow-2xl hover:shadow-zinc-200/60 transition-all rounded-3xl flex justify-between items-center group">
+                                        <div key={quiz.id} className="p-6 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-zinc-200/80 transition-all rounded-3xl flex justify-between items-center group">
                                             <div>
                                                 <h3 className="font-bold text-zinc-900 dark:text-white mb-1">{quiz.title}</h3>
                                                 <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">Тест • {new Date(quiz.created_at).toLocaleDateString()}</p>
@@ -334,7 +333,7 @@ function CoursePage() {
                                     const selectedFile = selectedFiles[assignment.id];
 
                                     return (
-                                        <div key={assignment.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xl shadow-zinc-200/40 dark:shadow-none hover:shadow-2xl hover:shadow-zinc-200/60 transition-all w-full">
+                                        <div key={assignment.id} className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xl shadow-zinc-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-zinc-200/80 transition-all w-full">
                                             <div className="p-6 sm:p-8">
                                                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
                                                     <h3 className="text-xl font-bold text-zinc-900 dark:text-white wrap-break-word">{assignment.title}</h3>
@@ -412,11 +411,11 @@ function CoursePage() {
                     <div className="space-y-6">
                         <h2 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">Роботи студентів</h2>
                         {submissions.length === 0 ? (
-                            <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-200 dark:border-zinc-800 text-zinc-400 font-medium shadow-xl shadow-zinc-200/40 dark:shadow-none">Зданих робіт поки немає.</div>
+                            <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-100 dark:border-zinc-800 text-zinc-400 font-medium shadow-xl shadow-zinc-200/50 dark:shadow-none">Зданих робіт поки немає.</div>
                         ) : (
                             <div className="grid grid-cols-1 gap-4">
                                 {submissions.map(sub => (
-                                    <div key={`${sub.assignment_id}-${sub.student_id}`} className="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 shadow-xl shadow-zinc-200/40 dark:shadow-none">
+                                    <div key={`${sub.assignment_id}-${sub.student_id}`} className="p-6 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 shadow-xl shadow-zinc-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-zinc-200/80 transition-all">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-blue-500/20 shrink-0">{sub.student_name.charAt(0)}</div>
                                             <div>
@@ -441,7 +440,7 @@ function CoursePage() {
                 )}
 
                 {activeTab === 'students' && (
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] p-8 shadow-xl shadow-zinc-200/40 dark:shadow-none">
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2.5rem] p-8 shadow-xl shadow-zinc-200/50 dark:shadow-none">
                         <h2 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight mb-8">Студенти курсу</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {courseStudents.length > 0 ? (
