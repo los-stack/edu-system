@@ -5,7 +5,7 @@ import './index.css'
 import axios from 'axios'
 import { ThemeProvider } from './contexts/ThemeContext' 
 
-axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+axios.defaults.baseURL = 'https://eplatform-backend-nren.onrender.com';
 axios.defaults.withCredentials = true;
 
 axios.interceptors.response.use(

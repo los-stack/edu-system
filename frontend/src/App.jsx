@@ -58,7 +58,7 @@ function Navbar() {
     }
   };
 
-  const avatarPath = user?.avatar_url ? `${import.meta.env.VITE_API_URL}${user.avatar_url}` : null;
+  const avatarPath = user?.avatar_url ? `https://eplatform-backend-nren.onrender.com${user.avatar_url}` : null;
 
   return (
     <nav className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl shadow-sm dark:shadow-none border-b border-transparent dark:border-zinc-800/80 sticky top-0 z-40 transition-colors">
