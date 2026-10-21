@@ -4,8 +4,9 @@ import App from './App.jsx'
 import './index.css'
 import axios from 'axios'
 import { ThemeProvider } from './contexts/ThemeContext' 
+import { API_BASE_URL } from './apiConfig'
 
-axios.defaults.baseURL = 'https://eplatform-backend-nren.onrender.com';
+axios.defaults.baseURL = API_BASE_URL;
 axios.defaults.withCredentials = true;
 
 axios.interceptors.response.use(

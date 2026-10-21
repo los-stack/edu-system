@@ -79,15 +79,15 @@ function Profile() {
     if (!user) return null;
 
     return (
-        <div className="w-full relative mt-2">
+        <div className="w-full relative mt-2 pb-12">
             
-            <div className="relative bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 sm:p-12 mb-10 shadow-xl shadow-zinc-200/40 dark:shadow-none dark:border dark:border-zinc-800 overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+            <div className="page-banner p-7 sm:p-10 mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
                 <div className="relative z-10">
                     <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 dark:text-blue-400 mb-6 hover:gap-3 transition-all">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                         Назад до панелі
                     </Link>
-                    <h1 className="text-3xl sm:text-5xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight mb-3">Налаштування</h1>
+                    <h1>Налаштування профілю</h1>
                     <p className="text-lg text-zinc-500 dark:text-zinc-400 font-medium">Керуйте своїми особистими даними та безпекою акаунту.</p>
                 </div>
             </div>
@@ -95,7 +95,7 @@ function Profile() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 
                 <div className="lg:col-span-4">
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-4xl p-8 shadow-xl shadow-zinc-200/40 dark:shadow-none text-center sticky top-24">
+                    <div className="page-surface p-8 text-center sticky top-24">
                         <div className="w-32 h-32 mx-auto rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-4xl shadow-lg shadow-blue-600/20 mb-6 border-4 border-white dark:border-zinc-800">
                             {user.name.charAt(0).toUpperCase()}
                         </div>
@@ -112,7 +112,7 @@ function Profile() {
 
                 <div className="lg:col-span-8 space-y-8">
                     
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-4xl shadow-xl shadow-zinc-200/40 dark:shadow-none overflow-hidden">
+                    <div className="page-surface overflow-hidden">
                         <div className="px-8 py-6 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-transparent">
                             <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Особисті дані</h3>
                             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Оновіть своє ім'я та контактну адресу.</p>
@@ -126,7 +126,7 @@ function Profile() {
                                         value={name} 
                                         onChange={(e) => setName(e.target.value)} 
                                         required 
-                                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm font-medium" 
+                                        className="ui-input"
                                     />
                                 </div>
                                 <div>
@@ -136,7 +136,7 @@ function Profile() {
                                         value={email} 
                                         onChange={(e) => setEmail(e.target.value)} 
                                         required 
-                                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm font-medium" 
+                                        className="ui-input"
                                     />
                                 </div>
                             </div>
@@ -152,7 +152,7 @@ function Profile() {
                         </form>
                     </div>
 
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-4xl shadow-xl shadow-zinc-200/40 dark:shadow-none overflow-hidden border-t-4 border-t-zinc-900 dark:border-t-zinc-100">
+                    <div className="page-surface overflow-hidden">
                         <div className="px-8 py-6 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-transparent">
                             <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Безпека</h3>
                             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Змініть свій пароль для доступу до системи.</p>
@@ -166,7 +166,7 @@ function Profile() {
                                     onChange={(e) => setCurrentPassword(e.target.value)} 
                                     required 
                                     placeholder="Введіть старий пароль"
-                                    className="w-full max-w-md px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm font-medium" 
+                                    className="ui-input max-w-md"
                                 />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
@@ -178,7 +178,7 @@ function Profile() {
                                         onChange={(e) => setNewPassword(e.target.value)} 
                                         required 
                                         placeholder="Мінімум 6 символів"
-                                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm font-medium" 
+                                        className="ui-input"
                                     />
                                 </div>
                                 <div>
@@ -189,7 +189,7 @@ function Profile() {
                                         onChange={(e) => setConfirmPassword(e.target.value)} 
                                         required 
                                         placeholder="Повторіть новий пароль"
-                                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm font-medium" 
+                                        className="ui-input"
                                     />
                                 </div>
                             </div>

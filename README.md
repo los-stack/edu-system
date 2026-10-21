@@ -1,116 +1,111 @@
-# EPlatform - Educational Management System
+# EPlatform — система управління навчанням
 
-A comprehensive, full-stack Educational Management System designed to facilitate online learning, course administration, and student assessment. Built with a modern JavaScript ecosystem, the platform features secure role-based access control, interactive assessment tools, and dynamic document generation.
+Вебзастосунок для навчання, курсів і оцінювання. Студенти проходять курси, здають завдання й тести; викладачі створюють навчальні матеріали та оцінюють роботи; адміністратори керують користувачами.
 
-## Architecture & Tech Stack
+## Технології
 
-**Frontend:**
+- **Frontend:** React 19, Vite, Tailwind CSS, React Router, Axios.
+- **Backend:** Node.js, Express 5, PostgreSQL (`pg`), JWT, Multer.
+- **Файли:** локально на диску під час розробки; Cloudinary можна підключити для розгортання.
 
-- React 18
-- Vite (Build Tool)
-- Tailwind CSS (Styling)
-- React Router DOM (Routing)
-- Axios (HTTP Client)
-- React-Hot-Toast (Notifications)
+## Локальний запуск у Windows і VS Code
 
-**Backend:**
+Потрібні Node.js 20.19+ (або 22.12+) і PostgreSQL. Старі облікові дані не потрібні: ця інструкція створює порожню локальну базу. Під час реєстрації можна вибрати роль викладача та створити тестовий курс.
 
-- Node.js
-- Express.js
-- PostgreSQL (Hosted on Neon)
-- node-postgres (`pg` library)
-- JSON Web Tokens (JWT) for authentication
-- bcrypt (Password hashing)
-- PDFKit (Server-side PDF generation)
+### 1. Відкрити проєкт
 
-**Infrastructure & Storage:**
+Клонуйте репозиторій, якщо його ще немає на комп’ютері, а потім відкрийте кореневу папку проєкту у VS Code:
 
-- Vercel (Frontend Deployment)
-- Render (Backend Deployment)
-- Cloudinary (Cloud media & document storage)
-- Multer (Multipart/form-data handling)
-
-## Core Features
-
-### Role-Based Access Control (RBAC)
-
-- **Student:** Can browse courses, enroll, submit assignments, take quizzes, view progress, and generate certificates.
-- **Teacher:** Can create/manage courses, create assignments and quizzes, review student submissions, leave feedback, and grade assignments.
-- **Administrator:** Global oversight of the platform, user management, and system analytics.
-
-### Functional Modules
-
-- **Course Management:** CRUD operations for courses, structured content delivery.
-- **Assessment System:** \* Automated Quizzes with immediate result calculation.
-  - Manual Assignments requiring file uploads and teacher grading.
-- **Interactive Communication:** Contextual comment sections for individual assignments.
-- **Certification Engine:** Dynamic, server-side PDF generation of course completion certificates. Strictly validated against 100% graded task completion.
-- **Security:** \* Cross-Origin Resource Sharing (CORS) configured for specific domains.
-  - Secure, HTTP-only cookie implementation with `SameSite=None` for cross-domain authentication.
-  - Parameterized SQL queries to prevent SQL injection vulnerabilities.
-
-## Installation & Setup
-
-### Prerequisites
-
-- Node.js (v18+ recommended)
-- PostgreSQL database instance
-- Cloudinary account
-
-### 1. Clone the repository
-
-```bash
-git clone <https://github.com/los-stack/edu-system.gitl>
+```powershell
+git clone https://github.com/los-stack/edu-system.git
 cd edu-system
+code .
 ```
 
-### 2. Environment Variables Configuration
+Якщо репозиторій уже є, відкрийте його через **File → Open Folder**. Важливо відкрити корінь `edu-system`, а не окремо папку `frontend` чи `backend`.
 
-**Backend (`backend/.env`)**
-Create a `.env` file in the `backend` directory with the following keys:
+### 2. Встановити PostgreSQL і створити базу
 
-```env
-PORT=5000
-DATABASE_URL=postgres://<user>:<password>@<host>/<database>
-JWT_SECRET=<your_secure_jwt_secret_key>
-CLOUDINARY_CLOUD_NAME=<your_cloudinary_name>
-CLOUDINARY_API_KEY=<your_cloudinary_api_key>
-CLOUDINARY_API_SECRET=<your_cloudinary_api_secret>
-NODE_ENV=development
+Встановіть PostgreSQL 17 для Windows, наприклад командою:
+
+```powershell
+winget install --id PostgreSQL.PostgreSQL.17 --exact
 ```
 
-**Frontend (`frontend/.env`)**
-Create a `.env` file in the `frontend` directory:
+Якщо команда недоступна, завантажте інсталятор із [офіційної сторінки PostgreSQL для Windows](https://www.postgresql.org/download/windows/). Під час встановлення задайте пароль користувача `postgres` і запам’ятайте його. Потім у pgAdmin створіть порожню базу `edu_system` (**Databases → Create → Database**).
 
-```env
-VITE_API_URL=http://localhost:5000
+У pgAdmin відкрийте **Query Tool** для бази `edu_system`, відкрийте файл `backend/database/schema.sql` і виконайте його. SQL-файл створить таблиці, які потрібні застосунку.
+
+### 3. Створити локальні файли налаштувань
+
+У терміналі VS Code, відкритому в корені репозиторію, виконайте:
+
+```powershell
+Copy-Item backend\.env.example backend\.env
+Copy-Item frontend\.env.example frontend\.env
 ```
 
-### 3. Install Dependencies & Run
+Відредагуйте `backend/.env`: замініть `CHANGE_ME` у `DATABASE_URL` на пароль, який задали під час встановлення PostgreSQL. Якщо пароль містить символи на кшталт `@` або `#`, закодуйте їх для URL. `JWT_SECRET` у прикладі підходить лише для локальної розробки. Файли `.env` ігноруються Git — не додавайте в них справжні ключі до комітів.
 
-**Start the Backend server:**
+### 4. Запустити сервери
 
-```bash
+Відкрийте два термінали у VS Code.
+
+У першому:
+
+```powershell
 cd backend
 npm install
 npm run dev
 ```
 
-**Start the Frontend development server:**
+У другому:
 
-```bash
+```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
-## Deployment Notes
+Відкрийте адресу, яку покаже Vite (зазвичай `http://localhost:5173`). Створіть обліковий запис на сторінці реєстрації та увійдіть. Зупинити кожен сервер можна комбінацією `Ctrl+C` у відповідному терміналі.
 
-This project is configured for cloud deployment.
+Файли, завантажені під час локальної розробки, зберігаються в `backend/uploads`. Cloudinary для цього не потрібен. Для production-завантажень налаштуйте Cloudinary окремо; локальні налаштування не переносіть у production.
 
-- **Frontend** is optimized for Vercel. Ensure `Root Directory` is set to `frontend` and the `VITE_API_URL` environment variable points to the production backend URL.
-- **Backend** is optimized for Render (Web Service). Set the `Start Command` to `npm start` (or `node server.js`). Ensure the `Trust Proxy` setting is enabled in the Express app to support secure cookies over Render's proxy infrastructure.
+## Git і коміти
 
-## License
+Перегляньте зміни у вкладці **Source Control** у VS Code або командами:
+
+```powershell
+git status
+git diff
+```
+
+Коли зміни готові, створіть коміт і надішліть свою гілку на GitHub:
+
+```powershell
+git add .
+git commit -m "Describe your change"
+git push -u origin HEAD
+```
+
+Коміт зберігає знімок змін у Git; `push` надсилає його на GitHub. Перед комітом перевіряйте, що `.env`, паролі й інші секрети не потрапили до списку файлів.
+
+## Перевірки
+
+Для фронтенду:
+
+```powershell
+cd frontend
+npm run lint
+npm run build
+```
+
+У бекенді поки немає автоматизованого набору тестів. `npm test` ще не реалізований.
+
+## Розгортання
+
+Frontend можна розгорнути на Vercel, backend — на Render. У середовищі розгортання задайте production `DATABASE_URL`, `JWT_SECRET`, `NODE_ENV=production` і облікові дані Cloudinary. Для production збережіть HTTPS, `HttpOnly` cookies та дозволений CORS-origin. Не використовуйте локальну БД або секрет із `.env.example` у production.
+
+## Ліцензія
 
 MIT

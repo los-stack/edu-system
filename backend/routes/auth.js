@@ -5,6 +5,12 @@ const db = require('../config/db');
 const { body, validationResult } = require('express-validator'); 
 
 const router = express.Router();
+const isProduction = process.env.NODE_ENV === 'production';
+const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax'
+};
 
 router.post('/register', [
     body('name')
@@ -100,9 +106,7 @@ router.post('/login', [
         );
 
         res.cookie('token', token, {
-            httpOnly: true, 
-            secure: true,     
-            sameSite: 'none', 
+            ...cookieOptions,
             maxAge: 24 * 60 * 60 * 1000 
         });
 
@@ -123,11 +127,7 @@ router.post('/login', [
 });
 
 router.post('/logout', (req, res) => {
-    res.clearCookie('token', {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none'
-    }); 
+    res.clearCookie('token', cookieOptions);
     res.json({ message: 'Вихід успішний' });
 });
 

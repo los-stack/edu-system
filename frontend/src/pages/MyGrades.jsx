@@ -79,9 +79,9 @@ function MyGrades() {
     if (isLoading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div></div>;
 
     return (
-        <div className="max-w-7xl mx-auto pb-20 px-4 sm:px-6 lg:px-8 mt-4">
+        <div className="pb-12">
             
-            <div className="relative bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 sm:p-12 mb-10 border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/40 dark:shadow-none overflow-hidden flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+            <div className="page-banner p-7 sm:p-10 mb-8 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
                 <div className="absolute top-0 right-0 w-125 h-125 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
                 
                 <div className="relative z-10 max-w-xl">
@@ -89,13 +89,13 @@ function MyGrades() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                         НАЗАД ДО ПАНЕЛІ
                     </Link>
-                    <h1 className="text-3xl sm:text-5xl font-black text-zinc-900 dark:text-white tracking-tight mb-4">Мій щоденник</h1>
+                    <h1 className="mb-3">Мої результати</h1>
                     <p className="text-lg text-zinc-500 dark:text-zinc-400 font-medium">Детальна аналітика вашої успішності на платформі.</p>
                 </div>
 
                 {totalGrades > 0 && (
                     <div className="relative z-10 flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto">
-                        <div className="flex-1 bg-zinc-50 dark:bg-zinc-800/50 p-5 sm:p-6 rounded-3xl border border-zinc-100 dark:border-zinc-700/50 backdrop-blur-sm min-w-35 flex flex-col justify-between">
+                        <div className="page-surface flex-1 p-5 sm:p-6 min-w-35 flex flex-col justify-between">
                             <p className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Середній бал</p>
                             <div className="flex items-baseline gap-1">
                                 <span className={`text-4xl font-black ${statusConfig.color.split(' ')[0]}`}>{averageScore}</span>
@@ -103,7 +103,7 @@ function MyGrades() {
                             </div>
                         </div>
                         
-                        <div className="flex-1 bg-zinc-50 dark:bg-zinc-800/50 p-5 sm:p-6 rounded-3xl border border-zinc-100 dark:border-zinc-700/50 backdrop-blur-sm min-w-35 flex flex-col justify-between">
+                        <div className="page-surface flex-1 p-5 sm:p-6 min-w-35 flex flex-col justify-between">
                             <p className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Оцінено робіт</p>
                             <span className="text-4xl font-black text-zinc-900 dark:text-white">{totalGrades}</span>
                         </div>
@@ -122,7 +122,7 @@ function MyGrades() {
             {error && <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-2xl border border-red-200 dark:border-red-900/30 font-medium">{error}</div>}
 
             {totalGrades === 0 ? (
-                <div className="text-center py-24 bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-xl shadow-zinc-200/40 dark:shadow-none border border-zinc-200 dark:border-zinc-800">
+                <div className="app-empty-state text-center py-24">
                     <div className="w-16 h-16 mx-auto bg-zinc-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
                         <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     </div>
@@ -132,7 +132,7 @@ function MyGrades() {
             ) : (
                 <div className="space-y-8">
                     {Object.entries(groupedGrades).map(([courseTitle, courseGrades]) => (
-                        <div key={courseTitle} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-4xl overflow-hidden shadow-xl shadow-zinc-200/40 dark:shadow-none">
+                        <div key={courseTitle} className="page-surface overflow-hidden">
                             
                             <div className="bg-zinc-50/50 dark:bg-zinc-800/30 px-6 sm:px-8 py-5 border-b border-zinc-100 dark:border-zinc-800/50 flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">

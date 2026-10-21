@@ -19,8 +19,8 @@ const CreateCourseModal = ({ isOpen, onClose, onCreate }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/80 p-4 sm:p-6 overflow-y-auto">
-            <div className="bg-white dark:bg-zinc-900 shadow-2xl dark:shadow-none dark:border dark:border-zinc-800 rounded-3xl w-full max-w-2xl overflow-hidden transform transition-all flex flex-col max-h-full my-auto">
+        <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            <div className="modal-panel w-full max-w-2xl overflow-hidden transform transition-all flex flex-col max-h-full my-auto">
                 <div className="px-8 py-6 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0">
                     <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">Створити новий курс</h3>
                     <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800">
@@ -60,6 +60,8 @@ function Dashboard() {
     const [enrolledCourseIds, setEnrolledCourseIds] = useState([]);
     const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
     const [progressMap, setProgressMap] = useState({});
+    const [courseSearch, setCourseSearch] = useState('');
+    const [courseFilter, setCourseFilter] = useState('all');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -137,45 +139,55 @@ function Dashboard() {
     const myCourses = courses.filter(c => enrolledCourseIds.includes(c.id));
     const availableCourses = courses.filter(c => !enrolledCourseIds.includes(c.id));
     const displayCourses = user.role === 'student' ? [...myCourses, ...availableCourses] : courses;
+    const normalizedSearch = courseSearch.trim().toLocaleLowerCase('uk-UA');
+    const filteredCourses = displayCourses.filter(course => {
+        const isEnrolled = enrolledCourseIds.includes(course.id);
+        const matchesFilter = user.role !== 'student'
+            || courseFilter === 'all'
+            || (courseFilter === 'enrolled' && isEnrolled)
+            || (courseFilter === 'available' && !isEnrolled);
+        const searchableText = [
+            course.title,
+            course.teacher_name,
+            typeof course.description === 'string' ? course.description.replace(/<[^>]*>/g, ' ') : ''
+        ].filter(Boolean).join(' ').toLocaleLowerCase('uk-UA');
+
+        return matchesFilter && (!normalizedSearch || searchableText.includes(normalizedSearch));
+    });
 
     return (
         <div className="w-full relative mt-2">
             
-            <div className="relative bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-200 dark:border-zinc-800 p-8 sm:p-12 mb-12 shadow-md dark:shadow-none overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-                <div className="relative z-10">
+            <div className="dashboard-hero dashboard-hero-feature">
+                <div className="dashboard-hero-copy relative z-10">
                     <div className="flex items-center gap-3 mb-4">
-                        <span className="px-3 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-blue-50 text-blue-600 dark:bg-blue-600/10 dark:text-blue-400">
+                        <span className="dashboard-role">
                             {user.role === 'teacher' ? 'Викладач' : user.role === 'admin' ? 'Адміністратор' : 'Студент'}
                         </span>
                     </div>
-                    <h1 className="text-3xl sm:text-5xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight mb-3">
+                    <h1>
                         З поверненням, {user.name.split(' ')[0]}
                     </h1>
-                    <p className="text-zinc-500 dark:text-zinc-400 text-lg max-w-xl">
+                    <p>
                         {user.role === 'student' 
                             ? "Продовжуй навчання. Твій прогрес чекає на тебе." 
                             : "Керуй своїми курсами та відслідковуй успішність студентів."}
                     </p>
                 </div>
 
-                <div className="flex flex-wrap gap-3 relative z-10 w-full md:w-auto">
-                    {user.role === 'student' && (
-                        <Link to="/my-grades" className="w-full md:w-auto px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-sm font-bold transition-all shadow-lg shadow-blue-600/20 dark:shadow-none flex items-center justify-center gap-2">
-                            Мій щоденник
-                        </Link>
-                    )}
-                    {user.role === 'admin' && (
-                        <Link to="/admin" className="w-full md:w-auto px-6 py-3.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-2xl text-sm font-bold shadow-lg shadow-zinc-900/20 dark:shadow-none transition-all flex justify-center items-center">
-                            Панель Адміністратора
-                        </Link>
-                    )}
+                <div className="dashboard-hero-art" aria-hidden="true">
+                    <span className="dashboard-hero-art-label">ТВОЯ ТРАЄКТОРІЯ</span>
+                    <span className="dashboard-hero-art-center">GO</span>
+                    <span className="dashboard-hero-art-point dashboard-hero-art-point-one">01</span>
+                    <span className="dashboard-hero-art-point dashboard-hero-art-point-two">02</span>
+                    <span className="dashboard-hero-art-point dashboard-hero-art-point-three">03</span>
                 </div>
             </div>
 
             {error && <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-2xl font-medium">{error}</div>}
 
             {user.role === 'student' && (urgentDeadlines.length > 0 || deadlines.length > 0) && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+                <div className="dashboard-deadlines grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
                     {urgentDeadlines.length > 0 && (
                         <div className="p-8 bg-red-50/50 dark:bg-zinc-900 rounded-4xl border border-red-200 dark:border-red-900/30 flex flex-col justify-center shadow-md dark:shadow-none">
                             <div className="flex items-center gap-3 mb-2">
@@ -217,25 +229,92 @@ function Dashboard() {
                 </div>
             )}
 
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight">Всі курси</h2>
+            <div className="dashboard-section-heading flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <div>
+                    <span className="ui-eyebrow">Навчальний простір</span>
+                    <h2 className="mt-1 text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight">Ваші курси</h2>
+                </div>
                 {user.role === 'teacher' && (
-                    <button onClick={() => setIsCourseModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-sm font-bold rounded-2xl hover:bg-blue-700 transition-transform hover:-translate-y-0.5 shadow-md shadow-blue-600/20 dark:shadow-none">
-                        Створити курс
+                    <button onClick={() => setIsCourseModalOpen(true)} className="ui-button-primary">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" aria-hidden="true"><path strokeLinecap="round" d="M12 5v14m-7-7h14"></path></svg>
+                        Новий курс
                     </button>
                 )}
             </div>
+
+            {displayCourses.length > 0 && (
+                <div className="course-tools flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+                    <div className="course-search-field">
+                        <label htmlFor="course-search" className="sr-only">Пошук курсів</label>
+                        <svg className="course-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7" strokeWidth="2"></circle>
+                            <path strokeLinecap="round" strokeWidth="2" d="m16 16 4 4"></path>
+                        </svg>
+                        <input
+                            id="course-search"
+                            type="search"
+                            value={courseSearch}
+                            onChange={event => setCourseSearch(event.target.value)}
+                            placeholder="Назва курсу або викладач"
+                            className="ui-input course-search-input"
+                            aria-controls="course-results"
+                        />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Фільтри курсів">
+                        {user.role === 'student' && [
+                            { value: 'all', label: 'Усі курси' },
+                            { value: 'enrolled', label: 'Мої курси' },
+                            { value: 'available', label: 'Доступні' }
+                        ].map(filter => (
+                            <button
+                                key={filter.value}
+                                type="button"
+                                onClick={() => setCourseFilter(filter.value)}
+                                aria-pressed={courseFilter === filter.value}
+                                className={courseFilter === filter.value ? 'ui-button-primary' : 'ui-button-secondary'}
+                            >
+                                {filter.label}
+                            </button>
+                        ))}
+                        <span className="text-sm text-zinc-500 dark:text-zinc-400 px-1" aria-live="polite">
+                            {filteredCourses.length} з {displayCourses.length}
+                        </span>
+                    </div>
+                </div>
+            )}
             
             {displayCourses.length === 0 ? (
-                <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-200 dark:border-zinc-800 shadow-md dark:shadow-none">
+                <div className="app-empty-state text-center py-20">
                     <div className="w-16 h-16 mx-auto bg-zinc-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
                         <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                     </div>
                     <p className="text-zinc-500 dark:text-zinc-400 font-medium">Курсів поки немає. Вони з'являться тут згодом.</p>
                 </div>
+            ) : filteredCourses.length === 0 ? (
+                <div className="app-empty-state text-center py-16">
+                    <div className="w-16 h-16 mx-auto bg-zinc-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
+                        <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7" strokeWidth="1.5"></circle>
+                            <path strokeLinecap="round" strokeWidth="1.5" d="m16 16 4 4"></path>
+                        </svg>
+                    </div>
+                    <p className="text-zinc-700 dark:text-zinc-200 font-semibold">Курсів за цим запитом не знайдено</p>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">Спробуйте змінити пошуковий запит або фільтр.</p>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setCourseSearch('');
+                            setCourseFilter('all');
+                        }}
+                        className="ui-button-secondary mt-5"
+                    >
+                        Очистити пошук і фільтри
+                    </button>
+                </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-                    {displayCourses?.map((course, index) => {
+                <div id="course-results" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8" aria-live="polite">
+                    {filteredCourses.map((course, index) => {
                         if (!course) return null; 
                         
                         const isEnrolled = enrolledCourseIds.includes(course.id);
@@ -246,11 +325,12 @@ function Dashboard() {
                             : 0;
 
                         return (
-                            <div key={course.id || `course-${index}`} className="group flex flex-col bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 transition-all duration-300 shadow-md hover:shadow-xl dark:shadow-none dark:hover:border-zinc-700 hover:-translate-y-1 overflow-hidden relative">
-                                
-                                {isEnrolled && (
-                                    <div className="h-1.5 w-full bg-blue-600 absolute top-0 left-0"></div>
-                                )}
+                            <div key={course.id || `course-${index}`} className={`course-card group flex flex-col overflow-hidden relative${isEnrolled ? ' is-enrolled' : ''}`}>
+                                <div className="course-card-cover">
+                                    <span className="course-card-index">АРХІВ / {String(index + 1).padStart(2, '0')}</span>
+                                    {isEnrolled && <span className="course-card-status">У програмі</span>}
+                                    <span className="course-card-glyph" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                                </div>
 
                                 <div className="p-6 sm:p-8 flex-1 flex flex-col">
                                     <div className="flex justify-between items-start mb-4 gap-4">
@@ -288,13 +368,13 @@ function Dashboard() {
                                     )}
 
                                     <div className="flex items-center gap-3 pt-2">
-                                        <Link to={`/course/${course.id}`} className="flex-1 text-center px-4 py-3.5 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-2xl text-sm font-bold transition-colors border border-zinc-200 dark:border-transparent">
-                                            Відкрити
+                                        <Link to={`/course/${course.id}`} className="course-card-link flex-1">
+                                            Переглянути курс
                                         </Link>
                                         
                                         {user.role === 'student' && !isEnrolled && (
-                                            <button onClick={() => handleEnroll(course.id)} className="flex-1 text-center px-4 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-sm font-bold transition-colors shadow-md shadow-blue-600/20 dark:shadow-none">
-                                                Записатися
+                                            <button onClick={() => handleEnroll(course.id)} className="ui-button-primary flex-1">
+                                                Приєднатися
                                             </button>
                                         )}
                                     </div>
