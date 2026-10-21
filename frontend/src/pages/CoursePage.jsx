@@ -6,6 +6,7 @@ import CreateAssignmentModal from '../components/CreateAssignmentModal';
 import CommentSection from '../components/CommentSection';             
 import CreateQuizModal from '../components/CreateQuizModal';
 import QuizResultsModal from '../components/QuizResultsModal';
+import { getApiAssetUrl } from '../apiConfig';
 
 function CoursePage() {
     const { id } = useParams(); 
@@ -204,9 +205,9 @@ function CoursePage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto pb-20 px-4 sm:px-6 lg:px-8 mt-4">
+        <div className="pb-12 mt-2">
             
-            <div className="relative bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 sm:p-12 mb-10 border border-zinc-100 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-none overflow-hidden">
+            <div className="page-banner p-7 sm:p-10 mb-8">
                 <div className="absolute top-0 right-0 w-150 h-150 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
                 
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
@@ -215,7 +216,7 @@ function CoursePage() {
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                             НАЗАД ДО ПАНЕЛІ
                         </Link>
-                        <h1 className="text-3xl sm:text-5xl font-black text-zinc-900 dark:text-white tracking-tight mb-4">{course.title}</h1>
+                        <h1 className="mb-4">{course.title}</h1>
                         <div className="prose prose-lg dark:prose-invert text-zinc-500 dark:text-zinc-400 max-w-none line-clamp-2 wrap-break-word overflow-hidden" dangerouslySetInnerHTML={{ __html: course.description }}></div>
                     </div>
 
@@ -259,17 +260,21 @@ function CoursePage() {
                 </div>
             </div>
 
-            <div className="flex items-center gap-1 p-1.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-inner dark:shadow-none rounded-2xl mb-10 w-fit mx-auto sm:mx-0">
+            <div className="segmented-control mb-8" role="tablist" aria-label="Розділи курсу">
                 <button 
                     onClick={() => setActiveTab('content')}
-                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'content' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm border border-zinc-200/50 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                    data-active={activeTab === 'content'}
+                    role="tab"
+                    aria-selected={activeTab === 'content'}
                 >
                     Навчання
                 </button>
                 {(user.role === 'teacher' || user.role === 'admin') && (
                     <button 
                         onClick={() => setActiveTab('submissions')}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'submissions' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm border border-zinc-200/50 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                        data-active={activeTab === 'submissions'}
+                        role="tab"
+                        aria-selected={activeTab === 'submissions'}
                     >
                         Перевірка робіт
                         {analytics?.pendingReviews > 0 && <span className="ml-2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{analytics.pendingReviews}</span>}
@@ -277,7 +282,9 @@ function CoursePage() {
                 )}
                 <button 
                     onClick={() => setActiveTab('students')}
-                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'students' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm border border-zinc-200/50 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                    data-active={activeTab === 'students'}
+                    role="tab"
+                    aria-selected={activeTab === 'students'}
                 >
                     Учасники {courseStudents.length > 0 && <span className="opacity-60 ml-1">({courseStudents.length})</span>}
                 </button>
@@ -299,7 +306,7 @@ function CoursePage() {
                                 {quizzes.map(quiz => {
                                     const myResult = myQuizResultsMap[quiz.id];
                                     return (
-                                        <div key={quiz.id} className="p-6 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-zinc-200/80 transition-all rounded-3xl flex justify-between items-center group">
+                                        <div key={quiz.id} className="page-surface p-6 flex justify-between items-center group">
                                             <div>
                                                 <h3 className="font-bold text-zinc-900 dark:text-white mb-1">{quiz.title}</h3>
                                                 <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">Тест • {new Date(quiz.created_at).toLocaleDateString()}</p>
@@ -338,7 +345,7 @@ function CoursePage() {
                                     const selectedFile = selectedFiles[assignment.id];
 
                                     return (
-                                        <div key={assignment.id} className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xl shadow-zinc-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-zinc-200/80 transition-all w-full">
+                                        <div key={assignment.id} className="page-surface overflow-hidden w-full">
                                             <div className="p-6 sm:p-8">
                                                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
                                                     <h3 className="text-xl font-bold text-zinc-900 dark:text-white wrap-break-word">{assignment.title}</h3>
@@ -350,7 +357,7 @@ function CoursePage() {
                                                 <div className="prose dark:prose-invert max-w-none text-zinc-500 dark:text-zinc-400 mb-8 wrap-break-word overflow-hidden w-full" dangerouslySetInnerHTML={{ __html: assignment.description }}></div>
                                                 
                                                 <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                                                    {assignment.file_url && <a href={assignment.file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 bg-blue-50 dark:bg-blue-500/10 px-4 py-2 rounded-xl transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Завантажити матеріали</a>}
+                                                    {assignment.file_url && <a href={getApiAssetUrl(assignment.file_url)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 bg-blue-50 dark:bg-blue-500/10 px-4 py-2 rounded-xl transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Завантажити матеріали</a>}
                                                 </div>
 
                                                 {user.role === 'student' && (
@@ -424,12 +431,12 @@ function CoursePage() {
                         ) : (
                             <div className="grid grid-cols-1 gap-4">
                                 {submissions.map(sub => (
-                                    <div key={`${sub.assignment_id}-${sub.student_id}`} className="p-6 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 shadow-xl shadow-zinc-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-zinc-200/80 transition-all">
+                                    <div key={`${sub.assignment_id}-${sub.student_id}`} className="page-surface p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-blue-500/20 shrink-0">{sub.student_name.charAt(0)}</div>
                                             <div>
                                                 <h4 className="font-bold text-zinc-900 dark:text-white">{sub.student_name}</h4>
-                                                <a href={sub.file_url} target="_blank" rel="noreferrer" className="text-xs font-bold text-blue-500 hover:text-blue-400 transition-colors">ЗАВАНТАЖИТИ ФАЙЛ</a>
+                                                <a href={getApiAssetUrl(sub.file_url)} target="_blank" rel="noreferrer" className="text-xs font-bold text-blue-500 hover:text-blue-400 transition-colors">ЗАВАНТАЖИТИ ФАЙЛ</a>
                                             </div>
                                         </div>
                                         {sub.score !== null ? (
@@ -449,7 +456,7 @@ function CoursePage() {
                 )}
 
                 {activeTab === 'students' && (
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2.5rem] p-8 shadow-xl shadow-zinc-200/50 dark:shadow-none">
+                    <div className="page-surface p-8">
                         <h2 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight mb-8">Студенти курсу</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {courseStudents.length > 0 ? (

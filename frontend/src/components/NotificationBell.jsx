@@ -58,7 +58,9 @@ function NotificationBell() {
         <div className="relative" ref={dropdownRef}>
             <button 
                 onClick={toggleDropdown}
-                className="relative p-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors focus:outline-none"
+                className="app-icon-button relative"
+                aria-label={`Сповіщення${unreadCount ? `, непрочитаних: ${unreadCount}` : ''}`}
+                aria-expanded={isOpen}
             >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                 
@@ -71,7 +73,7 @@ function NotificationBell() {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl dark:shadow-none dark:border dark:border-zinc-800 z-50 overflow-hidden transform opacity-100 scale-100 transition-all origin-top-right border border-transparent">
+                <div className="page-surface absolute right-0 mt-2 w-80 z-50 overflow-hidden transform opacity-100 scale-100 transition-all origin-top-right">
                     <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex justify-between items-center">
                         <h3 className="text-sm font-bold text-zinc-900 dark:text-white tracking-tight">Сповіщення</h3>
                         <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{notifications.length} всього</span>

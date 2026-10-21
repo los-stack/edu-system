@@ -29,7 +29,7 @@ function AdminDashboard() {
                 setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
                 setCourses(Array.isArray(coursesRes.data) ? coursesRes.data : []);
 
-            } catch (err) {
+            } catch {
                 setError('Не вдалося завантажити дані.');
             } finally {
                 setIsLoading(false);
@@ -80,29 +80,29 @@ function AdminDashboard() {
     if (isLoading) return <div className="flex justify-center items-center h-[60vh]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
 
     return (
-        <div className="w-full relative mt-2">
+        <div className="w-full relative mt-2 pb-12">
             
-            <div className="relative bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 sm:p-12 mb-10 shadow-xl shadow-zinc-200/40 dark:shadow-none dark:border dark:border-zinc-800 overflow-hidden flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+            <div className="page-banner p-7 sm:p-10 mb-8 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
                 
                 <div className="relative z-10 max-w-xl">
                     <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 dark:text-blue-400 mb-6 hover:gap-3 transition-all">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                         Назад до панелі
                     </Link>
-                    <h1 className="text-3xl sm:text-5xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight mb-3">Система</h1>
+                    <h1>Керування платформою</h1>
                     <p className="text-lg text-zinc-500 dark:text-zinc-400 font-medium">Центр управління користувачами та навчальним контентом.</p>
                 </div>
 
                 <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 gap-4 w-full lg:w-auto">
-                    <div className="bg-zinc-50 dark:bg-zinc-800/50 p-6 rounded-3xl border border-zinc-100 dark:border-zinc-700/50">
+                    <div className="page-surface p-5">
                         <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Студентів</p>
                         <p className="text-3xl font-black text-zinc-900 dark:text-white">{stats.students}</p>
                     </div>
-                    <div className="bg-zinc-50 dark:bg-zinc-800/50 p-6 rounded-3xl border border-zinc-100 dark:border-zinc-700/50">
+                    <div className="page-surface p-5">
                         <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Викладачів</p>
                         <p className="text-3xl font-black text-blue-600 dark:text-blue-400">{stats.teachers}</p>
                     </div>
-                    <div className="col-span-2 sm:col-span-1 bg-zinc-50 dark:bg-zinc-800/50 p-6 rounded-3xl border border-zinc-100 dark:border-zinc-700/50">
+                    <div className="page-surface col-span-2 sm:col-span-1 p-5">
                         <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Курсів</p>
                         <p className="text-3xl font-black text-zinc-900 dark:text-white">{stats.totalCourses}</p>
                     </div>
@@ -111,17 +111,21 @@ function AdminDashboard() {
 
             {error && <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-2xl font-medium">{error}</div>}
 
-            <div className="flex items-center gap-1 p-1.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl mb-8 w-fit shadow-inner dark:shadow-none">
+            <div className="segmented-control mb-8" role="tablist" aria-label="Розділи керування">
                 <button 
                     onClick={() => setActiveTab('users')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'users' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm border border-zinc-200/50 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                    data-active={activeTab === 'users'}
+                    role="tab"
+                    aria-selected={activeTab === 'users'}
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     Користувачі
                 </button>
                 <button 
                     onClick={() => setActiveTab('courses')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'courses' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm border border-zinc-200/50 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                    data-active={activeTab === 'courses'}
+                    role="tab"
+                    aria-selected={activeTab === 'courses'}
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477-4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                     Всі курси
@@ -129,7 +133,7 @@ function AdminDashboard() {
             </div>
 
             {activeTab === 'users' && (
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xl shadow-zinc-200/40 dark:shadow-none">
+                <div className="page-surface overflow-hidden">
                     <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-transparent">
                         <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Керування користувачами</h2>
                     </div>
@@ -171,7 +175,7 @@ function AdminDashboard() {
             )}
 
             {activeTab === 'courses' && (
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xl shadow-zinc-200/40 dark:shadow-none">
+                <div className="page-surface overflow-hidden">
                     <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-transparent">
                         <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Керування курсами</h2>
                     </div>

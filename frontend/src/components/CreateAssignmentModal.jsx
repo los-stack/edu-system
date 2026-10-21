@@ -29,8 +29,8 @@ function CreateAssignmentModal({ isOpen, onClose, onCreate }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/80 p-4 overflow-y-auto">
-            <div className="bg-white dark:bg-zinc-900 border border-transparent dark:border-zinc-800 rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col max-h-full my-auto animate-scale-in">
+        <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="modal-panel w-full max-w-2xl flex flex-col max-h-full my-auto animate-scale-in">
                 <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-transparent">
                     <h3 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">Створити нове завдання</h3>
                     <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800">

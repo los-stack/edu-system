@@ -27,8 +27,8 @@ function QuizResultsModal({ isOpen, onClose, quiz }) {
     if (!isOpen || !quiz) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/50 backdrop-blur-sm p-4">
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-soft-lg border border-zinc-200 dark:border-zinc-800 w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-scale-in">
+        <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="modal-panel w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-scale-in">
                 
                 <div className="px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
                     <div>

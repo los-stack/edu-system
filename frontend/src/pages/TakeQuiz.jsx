@@ -66,7 +66,7 @@ function TakeQuiz() {
         
         return (
             <div className="min-h-[70vh] flex items-center justify-center p-4">
-                <div className="max-w-xl w-full bg-white dark:bg-zinc-900 p-10 sm:p-14 rounded-[2.5rem] shadow-2xl dark:shadow-none dark:border dark:border-zinc-800 text-center relative overflow-hidden">
+                <div className="page-surface max-w-xl w-full p-10 sm:p-14 text-center relative overflow-hidden">
                     <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-75 h-75 rounded-full blur-3xl opacity-20 pointer-events-none ${colorTheme === 'green' ? 'bg-green-500' : colorTheme === 'amber' ? 'bg-amber-500' : 'bg-red-500'}`}></div>
                     
                     <div className="relative z-10">
@@ -104,7 +104,7 @@ function TakeQuiz() {
     return (
         <div className="max-w-4xl mx-auto pb-32 pt-4 px-4 sm:px-6 relative">
             
-            <div className="sticky top-16 z-30 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl pt-4 pb-6 border-b border-transparent">
+            <div className="quiz-sticky-header sticky z-30">
                 <div className="flex justify-between items-end mb-3">
                     <div>
                         <h1 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white tracking-tight truncate max-w-50 sm:max-w-md">{quiz.title}</h1>
@@ -125,7 +125,7 @@ function TakeQuiz() {
 
             <div className="space-y-10 sm:space-y-16">
                 {quiz.questions.map((q, index) => (
-                    <div key={q.id} className="relative bg-white dark:bg-zinc-900 p-6 sm:p-10 rounded-4xl border border-zinc-200/50 dark:border-zinc-800 shadow-xl shadow-zinc-200/40 dark:shadow-none transition-colors">
+                    <div key={q.id} className="page-surface relative p-6 sm:p-9">
                         
                         <div className="absolute -top-4 -left-2 sm:-left-6 w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-lg shadow-blue-600/30 dark:shadow-none transform -rotate-6">
                             {index + 1}
@@ -139,10 +139,12 @@ function TakeQuiz() {
                             {q.options.map(opt => {
                                 const isSelected = answers[q.id] === opt.id;
                                 return (
-                                    <div 
+                                    <button
+                                        type="button"
                                         key={opt.id} 
                                         onClick={() => handleOptionSelect(q.id, opt.id)}
-                                        className={`group flex items-center gap-4 p-5 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${isSelected ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-500/10' : 'border-zinc-100 dark:border-zinc-800 hover:border-blue-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
+                                        aria-pressed={isSelected}
+                                        className={`quiz-option group flex w-full items-center gap-4 p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 ${isSelected ? 'is-selected' : ''}`}
                                     >
                                         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'border-blue-600 dark:border-blue-400' : 'border-zinc-300 dark:border-zinc-600 group-hover:border-blue-400'}`}>
                                             <div className={`w-3 h-3 rounded-full bg-blue-600 dark:bg-blue-400 transition-transform duration-200 ${isSelected ? 'scale-100' : 'scale-0'}`}></div>
@@ -151,7 +153,7 @@ function TakeQuiz() {
                                         <span className={`text-base sm:text-lg font-medium ${isSelected ? 'text-blue-900 dark:text-blue-300 font-bold' : 'text-zinc-700 dark:text-zinc-300'}`}>
                                             {opt.answer_text}
                                         </span>
-                                    </div>
+                                    </button>
                                 );
                             })}
                         </div>

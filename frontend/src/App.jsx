@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'; 
+import { BrowserRouter, Routes, Route, Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 
@@ -15,6 +15,7 @@ import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute'; 
 import ThemeToggle from './components/ThemeToggle';
 import NotificationBell from './components/NotificationBell';
+import { API_BASE_URL } from './apiConfig';
 
 function Navbar() {
   const location = useLocation();
@@ -58,20 +59,26 @@ function Navbar() {
     }
   };
 
-  const avatarPath = user?.avatar_url ? `https://eplatform-backend-nren.onrender.com${user.avatar_url}` : null;
+  const avatarPath = user?.avatar_url ? `${API_BASE_URL}${user.avatar_url}` : null;
+  const navLinkClass = ({ isActive }) => `app-nav-link${isActive ? ' is-active' : ''}`;
 
   return (
-    <nav className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl shadow-sm dark:shadow-none border-b border-transparent dark:border-zinc-800/80 sticky top-0 z-40 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        
-        <Link to={isAuthPage ? "/" : "/dashboard"} className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white transform group-hover:scale-105 transition-transform shadow-md shadow-blue-600/20 dark:shadow-none">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"></path><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"></path></svg>
-            </div>
-            <span className="text-xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight">EPlatform</span>
+    <header className="app-header">
+      <div className="app-header-inner">
+        <Link to={isAuthPage ? "/" : "/dashboard"} className="app-brand">
+            <span className="app-brand-mark" aria-hidden="true">e</span>
+            <span className="app-brand-name">EPlatform<span className="app-brand-period">.</span></span>
         </Link>
-        
-        <div className="flex items-center gap-2 sm:gap-4">
+
+        {user && !isAuthPage && (
+          <nav className="app-nav" aria-label="Головна навігація">
+            <NavLink to="/dashboard" className={navLinkClass}>Навчання</NavLink>
+            {user.role === 'student' && <NavLink to="/my-grades" className={navLinkClass}>Мої оцінки</NavLink>}
+            {user.role === 'admin' && <NavLink to="/admin" className={navLinkClass}>Адміністрування</NavLink>}
+          </nav>
+        )}
+
+        <div className="app-header-actions">
             <ThemeToggle />
 
             {!isAuthPage && user && (
@@ -81,23 +88,25 @@ function Navbar() {
                 <div className="relative" ref={profileRef}>
                     <button 
                         onClick={() => setIsProfileOpen(!isProfileOpen)}
-                        className="flex items-center gap-2.5 p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none"
+                        className="app-profile-trigger"
+                        aria-expanded={isProfileOpen}
+                        aria-label="Меню профілю"
                     >
                         {avatarPath ? (
-                            <img src={avatarPath} alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-zinc-200 dark:border-zinc-700" />
+                            <img src={avatarPath} alt="" className="app-avatar object-cover" />
                         ) : (
-                            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md dark:shadow-none dark:border dark:border-zinc-700">
+                            <div className="app-avatar">
                                 {user.name.charAt(0).toUpperCase()}
                             </div>
                         )}
-                        <span className="hidden sm:block text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                        <span className="app-profile-name">
                             {user.name.split(' ')[0]}
                         </span>
-                        <svg className={`hidden sm:block w-4 h-4 text-zinc-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        <svg className={`w-4 h-4 text-zinc-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m6 9 6 6 6-6"></path></svg>
                     </button>
 
                     {isProfileOpen && (
-                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl dark:shadow-none dark:border dark:border-zinc-800 z-50 overflow-hidden origin-top-right border border-transparent">
+                        <div className="page-surface absolute right-0 mt-2 w-56 z-50 overflow-hidden origin-top-right">
                             <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
                                 <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">{user.name}</p>
                                 <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate mt-0.5">{user.email}</p>
@@ -121,7 +130,7 @@ function Navbar() {
             )}
         </div>
       </div>
-    </nav>
+    </header>
   );
 }
 
@@ -133,11 +142,11 @@ function App() {
           duration: 3000 
       }} />
       
-      <div className="min-h-screen flex flex-col font-sans text-zinc-900 bg-white dark:bg-zinc-900 dark:text-zinc-100 transition-colors duration-200">
+      <div className="min-h-screen flex flex-col font-sans text-zinc-900 dark:text-zinc-100 transition-colors duration-200">
         
         <Navbar />
 
-        <main className="grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <main className="app-main grow">
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/register" element={<Register />} />
